@@ -1,0 +1,953 @@
+<title>GitTrend Playbook</title>
+<style>
+  :root {
+    --paper: #f6f8fc;
+    --paper-raised: #ffffff;
+    --ink: #101827;
+    --ink-muted: #4d5768;
+    --ink-faint: #7c8598;
+    --line: #dde3ee;
+    --line-soft: #e8ecf4;
+    --accent: #2955d8;
+    --accent-ink: #1c3d9e;
+    --accent-soft: #e7edfc;
+    --teal: #0d8f83;
+    --teal-soft: #e2f5f2;
+    --amber: #b5710f;
+    --amber-soft: #faf0dd;
+    --code-bg: #0e1526;
+    --code-bg-raised: #121b30;
+    --code-ink: #dbe6f8;
+    --code-muted: #8798bb;
+    --code-accent: #7fc4ff;
+    --code-string: #9fe6b8;
+    --shadow: 0 1px 2px rgba(16, 24, 39, 0.04), 0 8px 24px -12px rgba(16, 24, 39, 0.12);
+    --radius: 14px;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #0b0f1a;
+      --paper-raised: #121828;
+      --ink: #e7ecf7;
+      --ink-muted: #a2acc2;
+      --ink-faint: #6d788e;
+      --line: #26304a;
+      --line-soft: #1c2438;
+      --accent: #7ba2ff;
+      --accent-ink: #bcd0ff;
+      --accent-soft: #182449;
+      --teal: #5fd9c7;
+      --teal-soft: #10312c;
+      --amber: #e8b366;
+      --amber-soft: #33270f;
+      --code-bg: #060a14;
+      --code-bg-raised: #0c1120;
+      --code-ink: #dbe6f8;
+      --code-muted: #7484a3;
+      --code-accent: #7fc4ff;
+      --code-string: #9fe6b8;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 28px -12px rgba(0, 0, 0, 0.55);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper: #0b0f1a;
+    --paper-raised: #121828;
+    --ink: #e7ecf7;
+    --ink-muted: #a2acc2;
+    --ink-faint: #6d788e;
+    --line: #26304a;
+    --line-soft: #1c2438;
+    --accent: #7ba2ff;
+    --accent-ink: #bcd0ff;
+    --accent-soft: #182449;
+    --teal: #5fd9c7;
+    --teal-soft: #10312c;
+    --amber: #e8b366;
+    --amber-soft: #33270f;
+    --code-bg: #060a14;
+    --code-bg-raised: #0c1120;
+    --code-ink: #dbe6f8;
+    --code-muted: #7484a3;
+    --code-accent: #7fc4ff;
+    --code-string: #9fe6b8;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 28px -12px rgba(0, 0, 0, 0.55);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3 {
+    font-family: -apple-system, "Segoe UI", "Inter", "Helvetica Neue", Arial, sans-serif;
+    font-weight: 750;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+    color: var(--ink);
+    margin: 0;
+  }
+
+  .mono {
+    font-family: "SF Mono", "JetBrains Mono", "Cascadia Code", ui-monospace, Menlo, Consolas, monospace;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .shell {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 28px 96px;
+    display: grid;
+    grid-template-columns: 220px minmax(0, 760px);
+    gap: 56px;
+    justify-content: center;
+  }
+
+  @media (max-width: 980px) {
+    .shell { grid-template-columns: minmax(0, 1fr); padding: 0 20px 72px; }
+    .toc { display: none; }
+  }
+
+  /* ---------- Hero ---------- */
+
+  .hero {
+    grid-column: 1 / -1;
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 64px 0 40px;
+    text-align: left;
+  }
+
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent-ink);
+    background: var(--accent-soft);
+    border-radius: 999px;
+    padding: 6px 14px 6px 10px;
+    margin-bottom: 20px;
+  }
+
+  .eyebrow .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent);
+    flex: none;
+  }
+
+  .hero h1 {
+    font-size: clamp(2.1rem, 4.4vw, 3rem);
+    line-height: 1.06;
+  }
+
+  .hero .lede {
+    margin-top: 18px;
+    font-size: 1.15rem;
+    line-height: 1.55;
+    color: var(--ink-muted);
+    max-width: 62ch;
+  }
+
+  .hero .source-line {
+    margin-top: 22px;
+    font-size: 13.5px;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- TOC ---------- */
+
+  .toc {
+    position: sticky;
+    top: 48px;
+    align-self: start;
+    padding-top: 4px;
+  }
+
+  .toc-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 14px;
+  }
+
+  .toc ol {
+    list-style: none;
+    margin: 0; padding: 0;
+    display: flex; flex-direction: column; gap: 11px;
+    border-left: 1px solid var(--line);
+  }
+
+  .toc a {
+    color: var(--ink-muted);
+    font-size: 14px;
+    font-weight: 500;
+    display: block;
+    padding: 2px 0 2px 16px;
+    border-left: 2px solid transparent;
+    margin-left: -1px;
+  }
+
+  .toc a:hover { color: var(--ink); text-decoration: none; border-left-color: var(--line); }
+
+  /* ---------- Sections ---------- */
+
+  main { min-width: 0; }
+
+  section { padding-top: 58px; }
+  section:first-of-type { padding-top: 8px; }
+
+  .section-head { margin-bottom: 22px; }
+
+  .section-num {
+    font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.03em;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  h2 { font-size: 1.5rem; }
+  .section-sub { margin-top: 8px; color: var(--ink-muted); font-size: 15px; max-width: 58ch; }
+
+  p { max-width: 66ch; }
+  .full-bleed-text { max-width: none; }
+
+  /* ---------- Build panel ---------- */
+
+  .build-panel {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .build-panel-top {
+    padding: 26px 26px 22px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .build-panel-top .agent-name {
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  .build-panel-top .agent-tag {
+    color: var(--ink-muted);
+    font-size: 14.5px;
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+
+  .build-flow {
+    padding: 22px 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--paper);
+  }
+
+  .flow-row {
+    display: grid;
+    grid-template-columns: 22px 1fr;
+    gap: 14px;
+  }
+
+  .flow-rail {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .flow-node {
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    flex: none;
+    margin-top: 6px;
+  }
+
+  .flow-row.optional .flow-node { background: var(--ink-faint); }
+
+  .flow-line {
+    width: 1px;
+    flex: 1;
+    background: var(--line);
+    min-height: 22px;
+  }
+
+  .flow-row:last-child .flow-line { display: none; }
+
+  .flow-body { padding-bottom: 22px; }
+
+  .flow-obj {
+    font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .flow-row.optional .flow-obj { color: var(--ink-muted); }
+
+  .flow-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    border: 1px solid var(--line);
+    border-radius: 5px;
+    padding: 1px 6px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+
+  .flow-desc {
+    color: var(--ink-muted);
+    font-size: 14px;
+    margin-top: 3px;
+    max-width: 52ch;
+  }
+
+  .build-questions {
+    padding: 20px 26px 26px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  .build-questions .qlabel {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 12px;
+  }
+
+  .q-list { display: flex; flex-direction: column; gap: 9px; }
+
+  .q-item {
+    font-size: 14.5px;
+    color: var(--ink);
+    padding-left: 20px;
+    position: relative;
+  }
+
+  .q-item::before {
+    content: "\201C";
+    position: absolute;
+    left: 0;
+    top: -2px;
+    color: var(--accent);
+    font-size: 18px;
+    font-weight: 800;
+  }
+
+  /* ---------- Setup checklist ---------- */
+
+  .setup-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .setup-item {
+    display: grid;
+    grid-template-columns: 30px 1fr;
+    gap: 14px;
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 20px;
+  }
+
+  .setup-idx {
+    font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    width: 26px; height: 26px;
+    border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .setup-item h3 { font-size: 15.5px; font-weight: 700; }
+
+  .setup-item p { color: var(--ink-muted); font-size: 14.5px; margin: 6px 0 0; }
+
+  .setup-item .warn {
+    margin-top: 10px;
+    font-size: 13.5px;
+    color: var(--amber);
+    background: var(--amber-soft);
+    border-radius: 8px;
+    padding: 8px 11px;
+    display: inline-block;
+  }
+
+  .cmdblock {
+    margin-top: 10px;
+    background: var(--code-bg);
+    border-radius: 8px;
+    padding: 10px 13px;
+    font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 12.5px;
+    color: var(--code-ink);
+    overflow-x: auto;
+  }
+
+  .cmdblock .c-muted { color: var(--code-muted); }
+
+  /* ---------- Capability grid ---------- */
+
+  .cap-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  @media (max-width: 620px) { .cap-grid { grid-template-columns: 1fr; } }
+
+  .cap-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 18px 19px;
+  }
+
+  .cap-card .cap-title {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14.5px;
+    font-weight: 700;
+  }
+
+  .cap-chip {
+    width: 7px; height: 7px;
+    border-radius: 2px;
+    background: var(--teal);
+    flex: none;
+  }
+
+  .cap-card.core .cap-chip { background: var(--accent); }
+
+  .cap-card p {
+    font-size: 13.8px;
+    color: var(--ink-muted);
+    margin: 8px 0 0;
+    max-width: none;
+  }
+
+  .cap-card .cap-name {
+    font-family: "SF Mono", ui-monospace, monospace;
+  }
+
+  .cap-group-label {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin: 30px 0 12px;
+  }
+
+  .cap-group-label:first-child { margin-top: 0; }
+
+  /* ---------- Event cards ---------- */
+
+  .event-card {
+    background: var(--paper-raised);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    margin-bottom: 22px;
+    overflow: hidden;
+  }
+
+  .event-head {
+    padding: 20px 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--line-soft);
+  }
+
+  .event-title { font-size: 1.05rem; font-weight: 750; }
+
+  .event-meta {
+    font-size: 13px;
+    color: var(--ink-muted);
+    margin-top: 5px;
+  }
+
+  .level-pill {
+    font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 5px 11px;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex: none;
+  }
+
+  .level-v1 { background: var(--teal-soft); color: var(--teal); }
+  .level-v2 { background: var(--accent-soft); color: var(--accent-ink); }
+  .level-v3 { background: var(--amber-soft); color: var(--amber); }
+
+  .event-body { padding: 20px 24px 24px; }
+
+  .event-focus {
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+  }
+
+  .prompt-block {
+    background: var(--code-bg);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .prompt-block:last-child { margin-bottom: 0; }
+
+  .prompt-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px 0;
+    font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 11px;
+    color: var(--code-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .prompt-label .caret { color: var(--code-accent); }
+
+  .prompt-text {
+    padding: 8px 14px 14px;
+    font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--code-ink);
+    white-space: pre-wrap;
+  }
+
+  .prompt-text .hl { color: var(--code-accent); }
+  .prompt-text .str { color: var(--code-string); }
+
+  .asked-block .prompt-label { color: var(--teal); }
+
+  /* ---------- Footer ---------- */
+
+  footer {
+    grid-column: 1 / -1;
+    max-width: 760px;
+    margin: 20px auto 0;
+    padding-top: 30px;
+    border-top: 1px solid var(--line);
+    font-size: 13.5px;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  footer a { color: var(--ink-muted); }
+
+  ::selection { background: var(--accent-soft); color: var(--accent-ink); }
+</style>
+
+<div class="shell">
+
+  <div class="hero">
+    <span class="eyebrow"><span class="dot"></span>Snowflake CoCo &amp; Cortex Agents</span>
+    <h1>Building AI agents with CoCo, without writing SQL by hand</h1>
+    <p class="lede">
+      A working reference distilled from three live deliveries of the same workshop — what a person
+      needs to set up, what the platform actually does, and the real prompts that built it each time.
+    </p>
+    <div class="source-line">
+      Source: <a href="https://github.com/sfc-gh-rbachala/building-ai-agents-with-coco-workshop" target="_blank" rel="noopener">sfc-gh-rbachala/building-ai-agents-with-coco-workshop</a>
+      — condensed from the v1 / v2 / v3 guides. Facilitated by Richie Bachala, Snowflake.
+    </div>
+  </div>
+
+  <nav class="toc">
+    <div class="toc-label">On this page</div>
+    <ol>
+      <li><a href="#building">What we're building</a></li>
+      <li><a href="#setup">Human setup</a></li>
+      <li><a href="#capabilities">What Cortex / CoCo can do</a></li>
+      <li><a href="#prompts">Prompts from the 3 events</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <section id="building">
+      <div class="section-head">
+        <span class="section-num">01</span>
+        <h2>What we're building</h2>
+        <p class="section-sub">
+          The same target across all three sessions — only how much of it gets built live changes.
+        </p>
+      </div>
+
+      <div class="build-panel">
+        <div class="build-panel-top">
+          <div class="agent-name mono">GitTrend</div>
+          <div class="agent-tag">
+            An AI agent grounded in <strong>107 million real GitHub events</strong> (GH Archive, loaded from
+            public S3), answering plain-English questions about what developers are actually building.
+            A human never writes SQL — CoCo writes every statement, in a terminal, directed by prompts.
+          </div>
+        </div>
+
+        <div class="build-flow">
+          <div class="flow-row">
+            <div class="flow-rail"><div class="flow-node"></div><div class="flow-line"></div></div>
+            <div class="flow-body">
+              <span class="flow-obj">GITHUB_EVENTS</span><span class="flow-tag">table</span>
+              <div class="flow-desc">107M rows copied in from S3 — the raw, read-only source of truth.</div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-rail"><div class="flow-node"></div><div class="flow-line"></div></div>
+            <div class="flow-body">
+              <span class="flow-obj">V_TRENDING_AI_REPOS</span><span class="flow-tag">view</span>
+              <div class="flow-desc">CoCo reads the raw schema, infers what "starred" means, and builds this after being asked to find trending AI/ML repos.</div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-rail"><div class="flow-node"></div><div class="flow-line"></div></div>
+            <div class="flow-body">
+              <span class="flow-obj">AI_COMPLETE</span><span class="flow-tag">function</span>
+              <div class="flow-desc">Wraps the view's rows in an LLM call so results come back as a written summary, not a table.</div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-rail"><div class="flow-node"></div><div class="flow-line"></div></div>
+            <div class="flow-body">
+              <span class="flow-obj">GITHUB_REPO_SEARCH</span><span class="flow-tag">search service</span>
+              <div class="flow-desc">A Cortex Search semantic index over the view — the agent's retrieval tool.</div>
+            </div>
+          </div>
+          <div class="flow-row">
+            <div class="flow-rail"><div class="flow-node"></div><div class="flow-line"></div></div>
+            <div class="flow-body">
+              <span class="flow-obj">GITTREND</span><span class="flow-tag">Cortex Agent</span>
+              <div class="flow-desc">Search + chart tool + system prompt. This is what you actually talk to, and it remembers the conversation across turns.</div>
+            </div>
+          </div>
+          <div class="flow-row optional">
+            <div class="flow-rail"><div class="flow-node"></div><div class="flow-line"></div></div>
+            <div class="flow-body">
+              <span class="flow-obj">GITTREND_MCP</span><span class="flow-tag">MCP Server · optional</span>
+              <div class="flow-desc">Exposes GITTREND to Claude Desktop, Cursor, or any MCP client outside Snowflake, over OAuth.</div>
+            </div>
+          </div>
+          <div class="flow-row optional">
+            <div class="flow-rail"><div class="flow-node"></div></div>
+            <div class="flow-body">
+              <span class="flow-obj">Cost governance</span><span class="flow-tag">optional</span>
+              <div class="flow-desc">Resource monitors, budgets, and per-user quotas so the finished agent can't spend without a ceiling.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="build-questions">
+          <div class="qlabel">What you can ask it, once it's live</div>
+          <div class="q-list">
+            <div class="q-item">What's the fastest-growing AI project in the last 30 days?</div>
+            <div class="q-item">Is there anything blowing up around MCP or agentic AI this month?</div>
+            <div class="q-item">Compare the top 5 repos — what do they have in common?</div>
+            <div class="q-item">Show me a bar chart of the top 10 repos by stars gained.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="setup">
+      <div class="section-head">
+        <span class="section-num">02</span>
+        <h2>What a human needs to set up</h2>
+        <p class="section-sub">
+          CoCo writes the SQL. It doesn't do these five things for you — they happen before the first prompt.
+        </p>
+      </div>
+
+      <div class="setup-list">
+        <div class="setup-item">
+          <div class="setup-idx mono">1</div>
+          <div>
+            <h3>A Snowflake trial account, from the event-specific link</h3>
+            <p>Not a generic trial signup — the AI features this workshop needs only activate inside a short UTC window tied to a specific event link (e.g. Aug 18–23 for an Aug 20 session).</p>
+            <span class="warn">Signing up too early is the single most common attendee failure.</span>
+          </div>
+        </div>
+
+        <div class="setup-item">
+          <div class="setup-idx mono">2</div>
+          <div>
+            <h3>The CoCo CLI, installed and verified</h3>
+            <p>One script per platform, then a version check.</p>
+            <div class="cmdblock"><span class="c-muted"># macOS / Linux / WSL</span><br>curl -LsS https://ai.snowflake.com/static/cc-scripts/install.sh | sh<br><br><span class="c-muted"># Windows (PowerShell)</span><br>irm https://ai.snowflake.com/static/cc-scripts/install.ps1 | iex<br><br><span class="c-muted"># verify</span><br>cortex --version</div>
+          </div>
+        </div>
+
+        <div class="setup-item">
+          <div class="setup-idx mono">3</div>
+          <div>
+            <h3>A project folder with an <span class="mono">AGENTS.md</span></h3>
+            <p>Plain text — your account identifier, role, warehouse, database/schema, and what CoCo must never touch. CoCo loads it automatically from whatever folder you launch it in. This is the one piece of the pattern worth taking to any other dataset.</p>
+            <div class="cmdblock">Account: &lt;your-snowflake-account-identifier&gt;<br>Role: ACCOUNTADMIN<br>Warehouse: WORKSHOP_WH<br>Database: GITTREND_DB<br><span class="c-muted">Do NOT modify: production tables, RBAC roles, cost-sensitive resources.</span></div>
+          </div>
+        </div>
+
+        <div class="setup-item">
+          <div class="setup-idx mono">4</div>
+          <div>
+            <h3>A connection from CoCo to Snowflake</h3>
+            <p>First launch opens a setup wizard. Fastest path is "Sign in with browser" (pulls your existing Snowsight session, no typed credentials) — or reuse a connection CoCo shares with the Snowflake CLI, from <span class="mono">~/.snowflake/connections.toml</span>.</p>
+          </div>
+        </div>
+
+        <div class="setup-item">
+          <div class="setup-idx mono">5</div>
+          <div>
+            <h3>ACCOUNTADMIN — only if you're doing cost governance</h3>
+            <p>Reading <span class="mono">ACCOUNT_USAGE</span> cost views and setting budgets or per-user quotas requires it. Not needed for the core agent build.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="capabilities">
+      <div class="section-head">
+        <span class="section-num">03</span>
+        <h2>What Cortex / CoCo can actually do</h2>
+        <p class="section-sub">
+          The building blocks a prompt can reach for, grouped by what they're for.
+        </p>
+      </div>
+
+      <div class="cap-group-label">Write and understand data</div>
+      <div class="cap-grid">
+        <div class="cap-card core">
+          <div class="cap-title"><span class="cap-chip"></span>CoCo CLI</div>
+          <p>An agentic terminal tool that writes and runs SQL for you, reasons about your schema, and reads <span class="cap-name">AGENTS.md</span> for context every session.</p>
+        </div>
+        <div class="cap-card core">
+          <div class="cap-title"><span class="cap-chip"></span>Schema inference</div>
+          <p>Handed a raw table, CoCo infers meaning that isn't written anywhere in the schema — e.g. that a <span class="cap-name">WatchEvent</span> means a repo was starred.</p>
+        </div>
+        <div class="cap-card">
+          <div class="cap-title"><span class="cap-chip"></span><span class="cap-name">AI_COMPLETE</span></div>
+          <p>An LLM call usable directly inside SQL — turns query results into a written summary. Successor to the deprecated <span class="cap-name">CORTEX.COMPLETE</span>.</p>
+        </div>
+        <div class="cap-card">
+          <div class="cap-title"><span class="cap-chip"></span>Cortex Search</div>
+          <p>A managed semantic search index over a table or view column — the retrieval tool an agent searches against.</p>
+        </div>
+      </div>
+
+      <div class="cap-group-label">Orchestrate and expose an agent</div>
+      <div class="cap-grid">
+        <div class="cap-card core">
+          <div class="cap-title"><span class="cap-chip"></span>Cortex Agents</div>
+          <p>Orchestrates tools — search, chart, SQL, semantic-view analyst — behind a system prompt. <span class="cap-name">auto</span> model selection means Snowflake upgrades the model under it without you touching the config. Holds memory across turns via Agent Threads.</p>
+        </div>
+        <div class="cap-card">
+          <div class="cap-title"><span class="cap-chip"></span><span class="cap-name">data_to_chart</span></div>
+          <p>A tool an agent can call on its own judgement to render a visualization inline, instead of a table of numbers.</p>
+        </div>
+        <div class="cap-card">
+          <div class="cap-title"><span class="cap-chip"></span>MCP Server</div>
+          <p>A DDL object exposing an agent, search service, or SQL execution to any MCP client — Claude Desktop, Cursor, VS Code — over OAuth. No separate infrastructure to stand up.</p>
+        </div>
+        <div class="cap-card">
+          <div class="cap-title"><span class="cap-chip"></span>Cortex Analyst / Semantic Views</div>
+          <p>A governed, structured alternative to search — the agent generates SQL directly from a business-defined semantic model.</p>
+        </div>
+      </div>
+
+      <div class="cap-group-label">Extend and govern</div>
+      <div class="cap-grid">
+        <div class="cap-card">
+          <div class="cap-title"><span class="cap-chip"></span>Agent Skills</div>
+          <p><span class="cap-name">SKILL.md</span> files uploaded to a stage that teach an agent new behavior without redeploying it.</p>
+        </div>
+        <div class="cap-card">
+          <div class="cap-title"><span class="cap-chip"></span>MCP Connectors (outbound)</div>
+          <p>The reverse of an MCP Server — an agent calling out to Jira, Salesforce, or an internal API to take action, not just answer.</p>
+        </div>
+        <div class="cap-card">
+          <div class="cap-title"><span class="cap-chip"></span>Cost visibility</div>
+          <p>CoCo's built-in Cost Intelligence skill plus four <span class="cap-name">ACCOUNT_USAGE</span> views (5 min – 3 hr latency) show credits by service, user, model, and agent.</p>
+        </div>
+        <div class="cap-card">
+          <div class="cap-title"><span class="cap-chip"></span>Cost controls</div>
+          <p>Resource Monitors cap warehouse compute; Budgets cap AI credit spend account-wide; Per User Quotas cap it person-by-person, enforced within minutes.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="prompts">
+      <div class="section-head">
+        <span class="section-num">04</span>
+        <h2>Sample prompts, from the three live events</h2>
+        <p class="section-sub">
+          Same agent, same dataset, three rooms — each one pushed a different layer live instead of leaving it as take-home.
+        </p>
+      </div>
+
+      <div class="event-card">
+        <div class="event-head">
+          <div>
+            <div class="event-title">ODSC AI × Snowflake — San Francisco</div>
+            <div class="event-meta">Aug 6, 2026 · Mindspace Coworking, SF · ~100 attendees · guide v1</div>
+          </div>
+          <span class="level-pill level-v1">v1 · core build</span>
+        </div>
+        <div class="event-body">
+          <div class="event-focus">Large, mixed-level room, 60 minutes. The 5-step core build lands live; MCP goes home as a stretch exercise.</div>
+
+          <div class="prompt-block">
+            <div class="prompt-label"><span class="caret">&gt;</span> explore the schema</div>
+            <div class="prompt-text">I have a table called GITTREND_DB.PUBLIC.GITHUB_EVENTS loaded from the GitHub Archive.
+Explore it: describe the key columns, explain what types of GitHub events are tracked.
+Tell me which columns would be most useful for finding trending AI and ML repositories
+by star activity.</div>
+          </div>
+
+          <div class="prompt-block">
+            <div class="prompt-label"><span class="caret">&gt;</span> build the trending view</div>
+            <div class="prompt-text">Create a view called <span class="hl">V_TRENDING_AI_REPOS</span> that finds repos that gained the most
+stars in the last 30 days. Where the repo name suggests AI, ML, LLM, GPT, agent, MCP,
+or open source. Only include repos with 10 or more stars gained. Show the top 20
+by stars gained, descending.</div>
+          </div>
+
+          <div class="prompt-block">
+            <div class="prompt-label"><span class="caret">&gt;</span> wrap it in AI_COMPLETE</div>
+            <div class="prompt-text">Wrap the results in a call to <span class="hl">AI_COMPLETE</span> so it returns a natural language summary:
+name the top 3 trending repos and why they're gaining momentum, note any patterns
+across language or topic, 3–4 sentences max. Use the 'claude-sonnet-4-6' model.</div>
+          </div>
+
+          <div class="prompt-block asked-block">
+            <div class="prompt-label"><span class="caret">$</span> asked of the finished agent</div>
+            <div class="prompt-text"><span class="str">"What's the fastest-growing AI project in the last 30 days?"</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="event-head">
+          <div>
+            <div class="event-title">TechEquity AI Forum — Level 2</div>
+            <div class="event-meta">Jul 28, 2026 · Snowflake SVAI Hub, Menlo Park · guide v2</div>
+          </div>
+          <span class="level-pill level-v2">v2 · MCP live</span>
+        </div>
+        <div class="event-body">
+          <div class="event-focus">Smaller, technical room, 75 minutes. Steps 3–5 compress into one rapid block, freeing time to run the MCP + OAuth handshake live instead of take-home.</div>
+
+          <div class="prompt-block">
+            <div class="prompt-label"><span class="caret">&gt;</span> create the MCP server</div>
+            <div class="prompt-text">Create an MCP Server called <span class="hl">GITTREND_MCP</span> that exposes the GITTREND agent as a tool.
+Tool name: "gittrend". Tool type: CORTEX_AGENT_RUN.
+Description: "GitHub trend analyst with 30 days of real star activity data.
+Ask it about trending repos, emerging AI/ML projects, and developer momentum."</div>
+          </div>
+
+          <div class="prompt-block">
+            <div class="prompt-label"><span class="caret">&gt;</span> set up OAuth so a client can connect</div>
+            <div class="prompt-text">CREATE OR REPLACE SECURITY INTEGRATION <span class="hl">GITTREND_MCP_OAUTH</span>
+  TYPE = OAUTH
+  OAUTH_CLIENT = CUSTOM
+  OAUTH_CLIENT_TYPE = 'CONFIDENTIAL'
+  OAUTH_REDIRECT_URI = <span class="str">'https://claude.ai/api/mcp/auth_callback'</span>;</div>
+          </div>
+
+          <div class="prompt-block asked-block">
+            <div class="prompt-label"><span class="caret">$</span> asked from Claude Desktop / Cursor, via MCP</div>
+            <div class="prompt-text"><span class="str">"Compare the top 5 repos — what do they have in common?"</span>
+<span class="str">"Are there any surprise breakouts — repos nobody knows yet but are gaining fast?"</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="event-card">
+        <div class="event-head">
+          <div>
+            <div class="event-title">TechEquity AI Infrastructure Forum</div>
+            <div class="event-meta">Aug 20, 2026 · Snowflake SVAI Hub, Menlo Park · 612 registered · guide v3</div>
+          </div>
+          <span class="level-pill level-v3">v3 · cost intelligence</span>
+        </div>
+        <div class="event-body">
+          <div class="event-focus">Concurrent with keynotes, running alongside a security keynote on agent authorization. Picks up the v2 agent and asks the infrastructure question: what does it cost, and what stops it running away?</div>
+
+          <div class="prompt-block">
+            <div class="prompt-label"><span class="caret">&gt;</span> see what it's costing</div>
+            <div class="prompt-text">Show me a breakdown of AI credit usage in my Snowflake account over the last 7 days.
+Start with a high-level summary using METERING_HISTORY — total credits by
+service type. Then show detail from CORTEX_AI_FUNCTIONS_USAGE_HISTORY grouped
+by function and model, and CORTEX_AGENT_USAGE_HISTORY grouped by agent and user.</div>
+          </div>
+
+          <div class="prompt-block">
+            <div class="prompt-label"><span class="caret">&gt;</span> put a ceiling on it</div>
+            <div class="prompt-text">Create a resource monitor called <span class="hl">WORKSHOP_AI_MONITOR</span>. Apply it to WORKSHOP_WH.
+Credit quota: 10 credits. Notify me at 80% usage, suspend the warehouse at 100%.
+
+Set up a per-user AI spending quota. Monthly limit: 20 credits. Daily limit: 5.
+Enable block enforcement.</div>
+          </div>
+
+          <div class="prompt-block">
+            <div class="prompt-label"><span class="caret">&gt;</span> ask CoCo to optimize its own agent</div>
+            <div class="prompt-text">Use the Cost Intelligence skill. Show me my AI function spending this week,
+grouped by function, model, and day. Then give me a specific recommendation
+to reduce the cost of the GITTREND agent — I want to keep it under
+2 AI credits per day.</div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <footer>
+      <span>Condensed reference — not a step-by-step run sheet. See the source repo for full timing and checkpoints.</span>
+      <span><a href="https://github.com/sfc-gh-rbachala/building-ai-agents-with-coco-workshop" target="_blank" rel="noopener">View source guides →</a></span>
+    </footer>
+
+  </main>
+</div>
