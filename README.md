@@ -30,6 +30,12 @@ What changes structurally when an AI agent becomes a principal in your infrastru
 
 - [Toolset scoping and the read/write boundary](agentic-ops/toolset-scoping.md)
 
+## [AIOps and log intelligence architecture](AI-Ops/)
+
+Log analysis at a volume that is genuinely adversarial. Cost per record, not model quality, determines the shape of the pipeline: deterministic parsing and statistical screening on every line, metered inference only on what survives. [LogAI](https://github.com/salesforce/logai) as the reference implementation.
+
+- [Cost-tiered log analysis](AI-Ops/cost-tiered-log-analysis.md)
+
 ## Reference
 
 - [Glossary](glossary.md) — terms as they're used when you're wiring something
