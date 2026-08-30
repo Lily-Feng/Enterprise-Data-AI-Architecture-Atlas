@@ -1,84 +1,41 @@
 ---
-title: Enterprise Data & AI Architecture Atlas
-description: A capability-first field guide to modern cloud data platforms, with Snowflake and Databricks as the primary architectural anchors.
-status: active
-last_reviewed: 2026-08-20
+title: Cross Connect
+description: Infrastructure architecture — how enterprise networks, GPU fabrics, and AI agents are actually set up, connected, and tuned.
+tags: [infrastructure, architecture, networking, gpu, agentic-ops]
 ---
 
-# Enterprise Data & AI Architecture Atlas
+# Cross Connect
 
-Understand enterprise data and AI systems by decomposing modern cloud platforms into reusable architectural capabilities—and comparing how Snowflake and Databricks implement those patterns.
+A cross connect is the cable in a colocation facility joining your cage to a carrier or a cloud on-ramp — the point where two systems designed separately have to physically meet.
 
-This repository is a personal, docs-as-code learning project. Snowflake and Databricks are the primary focus areas: the Atlas starts with capabilities such as warehousing, lakehouse design, governance, data sharing, real-time analytics, and AI-assisted operations, then studies how these platforms implement them in practice.
+This is a knowledge base about those points: how infrastructure is **set up, connected, and tuned**, rather than how any individual system works inside.
 
-There is no daily publishing schedule and no expectation that every section grows at the same pace. Work on one question at a time. A short learning note is a complete contribution; larger articles and labs are optional follow-ups.
+It's the infrastructure counterpart to [Calm Data and AI](https://github.com/Lily-Feng/Calm.Data.and.AI), which covers data and AI from the software perspective — the concepts, the algorithms, how a thing works internally. Here the subject is topology, integration, and the knobs.
 
-## A simple way to start
+## [Hybrid network architecture](hybrid-network/)
 
-1. Pick one question you want to understand.
-2. Capture what you learn with the [learning-note template](templates/learning-note.md).
-3. Stop there, or connect the note to a more durable page when you have the interest and evidence.
+Enterprise on-premise networks joined to cloud. Addressing, transit topology, routing, naming, identity federation — and why the transport almost always works while the integration almost always doesn't.
 
-The main places to explore are:
+- [DNS across the on-prem/cloud boundary](hybrid-network/dns-across-the-boundary.md)
 
-| Goal | Go to |
-|---|---|
-| Capture a question or useful source | [Notes](notes/README.md) |
-| Learn an idea or platform capability | [Concepts](concepts/README.md) and [Capabilities](capabilities/README.md) |
-| See the idea in a system or product | [Architectures](architectures/README.md) and [Products](products/README.md) |
-| Test a claim | [Labs](labs/README.md) |
-| Record a decision or rationale | [Thinking](thinking/README.md) |
+## [AI infrastructure architecture](ai-infra/)
 
-Featured starting points:
+The memory and interconnect hierarchy that governs GPU cluster design: HBM, NVLink and NVSwitch, InfiniBand fabrics, rail alignment, and topology-aware scheduling. The through-line is that parallelism strategy is a wiring decision wearing a software costume.
 
-- [Snowflake overview](products/snowflake.md)
-- [Databricks overview](products/databricks.md)
-- [Ontology capability](capabilities/ontology.md)
-- [Real-time analytics architecture](architectures/real-time-analytics.md)
+- [Mapping parallelism onto the interconnect hierarchy](ai-infra/parallelism-to-interconnect.md)
 
-## Knowledge model
+## [Agentic operations architecture](agentic-ops/)
 
-```text
-Question → Learning note → Connected page → Optional experiment
-```
+What changes structurally when an AI agent becomes a principal in your infrastructure — permission accumulation, context budgets against unbounded telemetry, and the difference between fluency and calibration. [HolmesGPT](https://github.com/HolmesGPT/holmesgpt) as the reference implementation.
 
-Notes preserve early learning. Concepts and capabilities explain reusable ideas. Architectures and products connect those ideas to real systems. Labs add evidence, while thinking pages record rationale. Not every note needs to move through every stage.
+- [Toolset scoping and the read/write boundary](agentic-ops/toolset-scoping.md)
 
-## Editorial conventions
+## Reference
 
-Every durable article begins with YAML front matter:
+- [Glossary](glossary.md) — terms as they're used when you're wiring something
 
-```yaml
 ---
-title: Human-readable title
-description: One-sentence scope and value
-status: seed # seed | draft | reviewed | mature | archived
-tags: [lowercase, kebab-case]
-last_reviewed: YYYY-MM-DD
----
-```
 
-Product pages also record `category`, `vendor`, and `open_source`. Architecture decisions use `decision_status`. Prefer evidence over feature lists, link related pages using relative links, distinguish fact from opinion, and include sources and a review date for time-sensitive claims.
+Figures marked `[verify: DATE]` come from documentation rather than a confirmed run; `[approx]` means order-of-magnitude. Configurations are reconstructed generically — invented addresses and names throughout.
 
-## Repository map
-
-```text
-concepts/          foundational ideas, independent of tools
-capabilities/      outcomes a platform must enable
-architectures/     end-to-end reference architectures
-products/          product analyses and capability mappings
-labs/              reproducible hands-on exercises
-thinking/          ADRs, principles, and synthesis essays
-notes/             lightweight learning notes and source trails
-templates/         article templates and contribution scaffolds
-```
-
-See the [glossary](glossary.md) and [contribution guide](CONTRIBUTING.md).
-
-## Scope and independence
-
-This is an independent learning project. Snowflake and Databricks are the main platform lenses, while other tools remain comparative references. Product names and trademarks belong to their respective owners. Descriptions should be based on public information and hands-on evidence; the goal is to learn transferable architecture, not to reproduce proprietary software or imply vendor affiliation.
-
-## License
-
-The repository already includes the [Apache License 2.0](LICENSE). Contributions are accepted under that license unless stated otherwise.
+[Apache License 2.0](LICENSE).
