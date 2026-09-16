@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CCAR-P Mock Exam</title>
+<style>
+:root{
+  --bg:#faf9f7; --surface:#fff; --surface-2:#f2f0ed; --border:#e0ddd8; --border-strong:#c9c4bc;
+  --text:#1f1e1c; --text-dim:#6b6762; --accent:#b8562f; --accent-soft:#f6ece7;
+  --ok:#2f6b46; --ok-soft:#e8f2ec; --bad:#a62f3b; --bad-soft:#f8eaec; --warn:#8a6a1f;
+  --radius:10px; --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  --sans:ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1a1917; --surface:#232220; --surface-2:#2c2a27; --border:#3a3835; --border-strong:#4d4a46;
+  --text:#ece9e4; --text-dim:#9d9890; --accent:#e08a5f; --accent-soft:#33261f;
+  --ok:#6ec08d; --ok-soft:#1e2e24; --bad:#e07a86; --bad-soft:#2e1d20; --warn:#d4ab54;
+}}
+:root[data-theme="dark"]{
+  --bg:#1a1917; --surface:#232220; --surface-2:#2c2a27; --border:#3a3835; --border-strong:#4d4a46;
+  --text:#ece9e4; --text-dim:#9d9890; --accent:#e08a5f; --accent-soft:#33261f;
+  --ok:#6ec08d; --ok-soft:#1e2e24; --bad:#e07a86; --bad-soft:#2e1d20; --warn:#d4ab54;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.55;
+  -webkit-font-smoothing:antialiased;font-size:16px}
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px 80px}
+h1{font-size:1.5rem;margin:0 0 4px;letter-spacing:-.01em}
+h2{font-size:1.15rem;margin:0 0 12px}
+.sub{color:var(--text-dim);font-size:.9rem;margin:0 0 24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--border-strong);
+  background:var(--surface);color:var(--text);padding:9px 16px;transition:background .12s,border-color .12s}
+button:hover:not(:disabled){background:var(--surface-2)}
+button:disabled{opacity:.4;cursor:default}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button.primary:hover:not(:disabled){filter:brightness(1.08);background:var(--accent)}
+button.ghost{border-color:transparent;color:var(--text-dim);padding:6px 10px}
+button.ghost:hover{color:var(--text)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.spread{justify-content:space-between}
+/* setup */
+.modes{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.mode{text-align:left;padding:14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface-2)}
+.mode[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.mode strong{display:block;margin-bottom:3px}
+.mode span{font-size:.83rem;color:var(--text-dim);line-height:1.4;display:block}
+.dchips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{font-size:.83rem;padding:6px 11px;border-radius:999px;border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim)}
+.chip[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--text)}
+label.tog{display:flex;gap:9px;align-items:flex-start;font-size:.9rem;cursor:pointer;padding:6px 0}
+label.tog input{margin-top:4px;accent-color:var(--accent);flex:none}
+label.tog em{display:block;font-style:normal;color:var(--text-dim);font-size:.83rem}
+/* exam */
+.bar{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border);
+  padding:10px 0;margin:-24px -16px 18px;padding-left:16px;padding-right:16px}
+.bar .row{font-size:.88rem}
+.timer{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.95rem}
+.timer.low{color:var(--bad);font-weight:600}
+.prog{height:3px;background:var(--surface-2);border-radius:2px;overflow:hidden;margin-top:9px}
+.prog i{display:block;height:100%;background:var(--accent);transition:width .2s}
+.meta{font-size:.78rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.qtext{font-size:1.05rem;margin:0 0 18px}
+.opt{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;padding:13px 15px;margin-bottom:9px;
+  border:1px solid var(--border);border-radius:var(--radius);background:var(--surface)}
+.opt:hover{border-color:var(--border-strong)}
+.opt[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.opt .k{flex:none;width:24px;height:24px;border-radius:6px;border:1px solid var(--border-strong);
+  display:grid;place-items:center;font-size:.78rem;font-weight:600;font-family:var(--mono)}
+.opt[aria-pressed="true"] .k{background:var(--accent);border-color:var(--accent);color:#fff}
+.opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+.opt.correct .k{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt.wrong .k{background:var(--bad);border-color:var(--bad);color:#fff}
+.why{border-left:3px solid var(--accent);background:var(--surface-2);padding:13px 15px;border-radius:0 8px 8px 0;
+  font-size:.92rem;margin-top:14px}
+.why b{display:block;font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);margin-bottom:5px}
+/* navigator */
+.nav{display:grid;grid-template-columns:repeat(auto-fill,minmax(38px,1fr));gap:6px;margin-top:12px}
+.nav button{padding:0;height:36px;font-size:.8rem;font-family:var(--mono);border-radius:7px}
+.nav button.done{background:var(--surface-2);border-color:var(--border-strong);font-weight:600}
+.nav button.flag{border-color:var(--warn);color:var(--warn);font-weight:600}
+.nav button.cur{outline:2px solid var(--accent);outline-offset:1px}
+.nav button.ok{background:var(--ok-soft);border-color:var(--ok);color:var(--ok)}
+.nav button.no{background:var(--bad-soft);border-color:var(--bad);color:var(--bad)}
+details{border-top:1px solid var(--border);margin-top:14px;padding-top:12px}
+summary{cursor:pointer;font-size:.88rem;color:var(--text-dim);user-select:none}
+summary:hover{color:var(--text)}
+/* results */
+.score{text-align:center;padding:26px 20px}
+.score .big{font-size:3.4rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.verdict{display:inline-block;margin-top:12px;padding:5px 15px;border-radius:999px;font-weight:600;font-size:.9rem}
+.verdict.p{background:var(--ok-soft);color:var(--ok)}
+.verdict.f{background:var(--bad-soft);color:var(--bad)}
+.dline{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:.92rem}
+.dline:last-child{border-bottom:0}
+.dline .track{grid-column:1/-1;height:6px;background:var(--surface-2);border-radius:3px;overflow:hidden}
+.dline .track i{display:block;height:100%;border-radius:3px;background:var(--accent)}
+.dline .track i.good{background:var(--ok)}
+.dline .track i.poor{background:var(--bad)}
+.dline .n{font-family:var(--mono);font-size:.85rem;color:var(--text-dim);font-variant-numeric:tabular-nums}
+.note{font-size:.83rem;color:var(--text-dim);background:var(--surface-2);padding:11px 14px;border-radius:8px;margin-top:14px}
+.rev{border-bottom:1px solid var(--border);padding:16px 0}
+.rev:last-child{border-bottom:0}
+.tag{display:inline-block;font-size:.72rem;font-weight:600;padding:2px 8px;border-radius:4px;margin-right:7px;vertical-align:1px}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.no{background:var(--bad-soft);color:var(--bad)}
+.hidden{display:none !important}
+kbd{font-family:var(--mono);font-size:.78rem;background:var(--surface-2);border:1px solid var(--border);
+  border-bottom-width:2px;border-radius:4px;padding:1px 5px}
+@media(max-width:600px){.wrap{padding:16px 14px 70px}.bar{margin:-16px -14px 16px;padding-left:14px;padding-right:14px}
+  .score .big{font-size:2.8rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ================= SETUP ================= -->
+<section id="setup">
+  <h1>CCAR-P Mock Exam</h1>
+  <p class="sub">63 practice items weighted to the official Claude Certified Architect &middot; Professional blueprint.
+    Original questions written against the published objectives &mdash; not real exam content.</p>
+
+  <div class="card">
+    <h2>Mode</h2>
+    <div class="modes">
+      <button class="mode" data-mode="full" aria-pressed="true">
+        <strong>Full exam</strong><span>All 63 items &middot; 120-minute timer &middot; no feedback until you submit. The real thing.</span>
+      </button>
+      <button class="mode" data-mode="quick" aria-pressed="false">
+        <strong>Quick 20</strong><span>20 items sampled across all domains &middot; 38-minute timer.</span>
+      </button>
+      <button class="mode" data-mode="practice" aria-pressed="false">
+        <strong>Practice</strong><span>Pick domains &middot; no timer &middot; answer shown immediately with the reasoning.</span>
+      </button>
+    </div>
+
+    <div id="dpick" class="hidden" style="margin-top:18px">
+      <div class="meta">Domains</div>
+      <div class="dchips" id="chips"></div>
+    </div>
+
+    <div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
+      <label class="tog"><input type="checkbox" id="shuffle" checked>
+        <span>Shuffle questions and answer options<em>Stops you memorising positions instead of reasoning.</em></span></label>
+    </div>
+
+    <div class="row" style="margin-top:18px">
+      <button class="primary" id="start">Start</button>
+      <button class="ghost" id="resume" hidden>Resume saved attempt</button>
+      <button class="ghost" id="theme" style="margin-left:auto">Theme</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>How to use this</h2>
+    <p style="margin:0 0 10px;font-size:.93rem">Work in <strong>Practice</strong> mode by domain first, reading every explanation
+      including the ones you got right &mdash; the explanation says <em>why the distractors lose</em>, which is the actual skill being tested.
+      Move to <strong>Full exam</strong> only once you are reading explanations and finding nothing new.</p>
+    <p style="margin:0;font-size:.93rem">The pass mark is <strong>720 / 1000</strong>. The scaled score shown here is an
+      estimate from your raw percentage &mdash; the real exam's scale comes from a standard-setting study, so treat a
+      borderline result here as <em>not yet ready</em>.</p>
+    <div class="note">Progress is saved in this browser as you go, so you can close the tab and resume.
+      Nothing is uploaded anywhere.</div>
+  </div>
+</section>
+
+<!-- ================= EXAM ================= -->
+<section id="exam" class="hidden">
+  <div class="bar">
+    <div class="row spread">
+      <span id="counter">Question 1 of 63</span>
+      <span class="row" style="gap:14px">
+        <span class="timer" id="timer"></span>
+        <button class="ghost" id="quit">End</button>
+      </span>
+    </div>
+    <div class="prog"><i id="progbar" style="width:0"></i></div>
+  </div>
+
+  <div class="card">
+    <div class="meta" id="qmeta"></div>
+    <p class="qtext" id="qtext"></p>
+    <div id="opts"></div>
+    <div id="feedback"></div>
+  </div>
+
+  <div class="row spread">
+    <button id="prev">&larr; Previous</button>
+    <button class="ghost" id="flagbtn">Flag for review</button>
+    <button class="primary" id="next">Next &rarr;</button>
+  </div>
+
+  <details id="navwrap">
+    <summary>Question navigator</summary>
+    <div class="nav" id="nav"></div>
+  </details>
+  <p class="note"><kbd>1</kbd>&ndash;<kbd>4</kbd> select &middot; <kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate &middot; <kbd>F</kbd> flag</p>
+</section>
+
+<!-- ================= RESULTS ================= -->
+<section id="results" class="hidden">
+  <div class="card score">
+    <div class="meta">Estimated scaled score</div>
+    <div class="big" id="scaled">&mdash;</div>
+    <div id="verdict"></div>
+    <p class="sub" id="rawline" style="margin:14px 0 0"></p>
+  </div>
+
+  <div class="card">
+    <h2>By domain</h2>
+    <div id="dbreak"></div>
+    <div class="note">Domain percentages on the real score report are informational &mdash; the pass decision is on the
+      total scaled score. Use them to decide what to restudy, not to predict a result.</div>
+  </div>
+
+  <div class="card">
+    <div class="row spread" style="margin-bottom:6px">
+      <h2 style="margin:0">Review</h2>
+      <span class="row">
+        <button class="ghost" id="filterAll" aria-pressed="true">All</button>
+        <button class="ghost" id="filterWrong" aria-pressed="false">Missed only</button>
+      </span>
+    </div>
+    <div id="review"></div>
+  </div>
+
+  <div class="row">
+    <button class="primary" id="again">New attempt</button>
+    <button id="retryWrong">Retry missed items</button>
+  </div>
+</section>
+
+</div>
+
+<script src="questions.js"></script>
+<script>
+(function(){
+"use strict";
+// Some sandboxed viewers (in-app preview panes, certain IDE previews) show this page
+// as an inert snapshot and never fetch the sibling script. Say so plainly rather than
+// failing silently. Opening index.html directly in a browser always works.
+if(typeof QUESTIONS==="undefined"){
+  document.querySelector(".wrap").innerHTML=
+    '<h1>Question bank not loaded</h1>'+
+    '<p class="sub">This page needs <code>questions.js</code> from the same folder. '+
+    'Open <code>index.html</code> directly in a browser (double-click it, or drag it onto a browser window) '+
+    'rather than through a preview pane.</p>';
+  return;
+}
+const KEY="ccarp-mock-v1";
+const $=id=>document.getElementById(id);
+const store={
+  get(){try{return JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){return null}},
+  set(v){try{localStorage.setItem(KEY,JSON.stringify(v))}catch(e){}},
+  clear(){try{localStorage.removeItem(KEY)}catch(e){}}
+};
+
+let S=null; // {items:[{qid,order:[],picked:[],flag}], i, mode, endsAt, instant, done}
+
+/* ---------- setup ---------- */
+let mode="full", chosen=new Set(Object.keys(DOMAINS).map(Number));
+
+document.querySelectorAll(".mode").forEach(b=>b.onclick=()=>{
+  mode=b.dataset.mode;
+  document.querySelectorAll(".mode").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  $("dpick").classList.toggle("hidden",mode!=="practice");
+});
+
+const chips=$("chips");
+Object.entries(DOMAINS).forEach(([n,name])=>{
+  const b=document.createElement("button");
+  b.className="chip"; b.setAttribute("aria-pressed","true");
+  b.textContent=n+". "+name;
+  b.onclick=()=>{
+    const on=b.getAttribute("aria-pressed")==="true";
+    if(on&&chosen.size===1)return;
+    on?chosen.delete(+n):chosen.add(+n);
+    b.setAttribute("aria-pressed",String(!on));
+  };
+  chips.appendChild(b);
+});
+
+$("theme").onclick=()=>{
+  const cur=document.documentElement.getAttribute("data-theme");
+  const dark=cur?cur==="dark":matchMedia("(prefers-color-scheme:dark)").matches;
+  document.documentElement.setAttribute("data-theme",dark?"light":"dark");
+};
+
+const saved=store.get();
+if(saved&&!saved.done){ $("resume").hidden=false;
+  $("resume").onclick=()=>{S=saved;show("exam");render();tick();}; }
+
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+
+$("start").onclick=()=>{
+  let pool=QUESTIONS.slice();
+  if(mode==="practice") pool=pool.filter(q=>chosen.has(q.domain));
+  const sh=$("shuffle").checked;
+  if(sh) shuffle(pool);
+  if(mode==="quick"){
+    // proportional sample across domains, then top up
+    const by={}; pool.forEach(q=>(by[q.domain]=by[q.domain]||[]).push(q));
+    const picked=[];
+    Object.keys(by).forEach(d=>{
+      const n=Math.max(1,Math.round(20*DOMAIN_WEIGHTS[d]/100));
+      picked.push(...by[d].slice(0,n));
+    });
+    pool=shuffle(picked).slice(0,20);
+  }
+  const mins = mode==="full"?120 : mode==="quick"?38 : 0;
+  S={
+    mode, instant:mode==="practice", done:false, i:0,
+    endsAt: mins?Date.now()+mins*60000:0,
+    items: pool.map(q=>({qid:q.id, order: sh?shuffle(q.choices.map((_,k)=>k)):q.choices.map((_,k)=>k), picked:[], flag:false}))
+  };
+  store.set(S); show("exam"); render(); tick();
+};
+
+function show(which){
+  ["setup","exam","results"].forEach(s=>$(s).classList.toggle("hidden",s!==which));
+  window.scrollTo(0,0);
+}
+const Q=id=>QUESTIONS.find(q=>q.id===id);
+
+/* ---------- timer ---------- */
+let timerId=null;
+function tick(){
+  clearInterval(timerId);
+  if(!S.endsAt){$("timer").textContent="No time limit";return;}
+  const upd=()=>{
+    const left=S.endsAt-Date.now();
+    if(left<=0){clearInterval(timerId);finish();return;}
+    const m=Math.floor(left/60000), s=Math.floor(left%60000/1000);
+    $("timer").textContent=m+":"+String(s).padStart(2,"0");
+    $("timer").classList.toggle("low",left<5*60000);
+  };
+  upd(); timerId=setInterval(upd,1000);
+}
+
+/* ---------- render ---------- */
+function render(){
+  const it=S.items[S.i], q=Q(it.qid), multi=q.answer.length>1;
+  $("counter").textContent=`Question ${S.i+1} of ${S.items.length}`;
+  $("progbar").style.width=((S.i+1)/S.items.length*100)+"%";
+  $("qmeta").textContent=`Domain ${q.domain} — ${DOMAINS[q.domain]}  ·  ${multi?"Select "+q.answer.length:"Select one"}`;
+  $("qtext").textContent=q.q;
+
+  // Reveal only once the item is fully answered — a multi-response item
+  // needs every selection before feedback locks the choices.
+  const answered=it.picked.length===q.answer.length;
+  const reveal=S.instant&&answered;
+
+  const box=$("opts"); box.innerHTML="";
+  it.order.forEach((orig,pos)=>{
+    const b=document.createElement("button");
+    b.className="opt";
+    const on=it.picked.includes(orig);
+    b.setAttribute("aria-pressed",String(on));
+    b.innerHTML=`<span class="k">${"ABCD"[pos]}</span><span>${esc(q.choices[orig])}</span>`;
+    if(reveal){
+      if(q.answer.includes(orig)) b.classList.add("correct");
+      else if(on) b.classList.add("wrong");
+      b.disabled=true;
+    } else {
+      b.onclick=()=>pick(orig,multi,q);
+    }
+    box.appendChild(b);
+  });
+
+  $("feedback").innerHTML = reveal
+    ? `<div class="why"><b>${same(it.picked,q.answer)?"Correct":"Not quite"}</b>${esc(q.why)}</div>` : "";
+
+  $("flagbtn").textContent=it.flag?"★ Flagged":"Flag for review";
+  $("prev").disabled=S.i===0;
+  $("next").textContent = S.i===S.items.length-1 ? "Finish" : "Next →";
+  buildNav();
+  store.set(S);
+}
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML;}
+function same(a,b){return a.length===b.length&&a.every(x=>b.includes(x));}
+
+function pick(orig,multi,q){
+  const it=S.items[S.i];
+  if(multi){
+    const k=it.picked.indexOf(orig);
+    if(k>-1) it.picked.splice(k,1);
+    else if(it.picked.length<q.answer.length) it.picked.push(orig);
+    else { it.picked.shift(); it.picked.push(orig); }
+  } else it.picked=[orig];
+  render();
+}
+
+function buildNav(){
+  const n=$("nav"); n.innerHTML="";
+  S.items.forEach((it,k)=>{
+    const b=document.createElement("button");
+    b.textContent=k+1;
+    if(it.picked.length) b.classList.add("done");
+    if(it.flag) b.classList.add("flag");
+    if(k===S.i) b.classList.add("cur");
+    const q=Q(it.qid);
+    if(S.instant&&it.picked.length===q.answer.length) b.classList.add(same(it.picked,q.answer)?"ok":"no");
+    b.onclick=()=>{S.i=k;render();};
+    n.appendChild(b);
+  });
+}
+
+$("next").onclick=()=>{ if(S.i===S.items.length-1) finish(); else {S.i++;render();} };
+$("prev").onclick=()=>{ if(S.i>0){S.i--;render();} };
+$("flagbtn").onclick=()=>{S.items[S.i].flag=!S.items[S.i].flag;render();};
+$("quit").onclick=()=>{
+  const un=S.items.filter(i=>!i.picked.length).length;
+  if(un&&!confirm(`${un} question${un>1?"s":""} still unanswered. End the attempt and see results?`))return;
+  finish();
+};
+
+document.addEventListener("keydown",e=>{
+  if($("exam").classList.contains("hidden"))return;
+  if(/^[1-4]$/.test(e.key)){
+    const it=S.items[S.i],q=Q(it.qid),pos=+e.key-1;
+    if(pos<it.order.length&&!(S.instant&&it.picked.length===q.answer.length)) pick(it.order[pos],q.answer.length>1,q);
+  }
+  else if(e.key==="ArrowRight"){ if(S.i<S.items.length-1){S.i++;render();} }
+  else if(e.key==="ArrowLeft"){ if(S.i>0){S.i--;render();} }
+  else if(e.key.toLowerCase()==="f"){ S.items[S.i].flag=!S.items[S.i].flag; render(); }
+});
+
+/* ---------- results ---------- */
+function finish(){
+  clearInterval(timerId);
+  S.done=true; store.set(S);
+  const per={}, tot={correct:0,n:S.items.length};
+  S.items.forEach(it=>{
+    const q=Q(it.qid), ok=same(it.picked,q.answer);
+    per[q.domain]=per[q.domain]||{c:0,n:0};
+    per[q.domain].n++; if(ok){per[q.domain].c++;tot.correct++;}
+  });
+  const pct=tot.n?tot.correct/tot.n:0;
+  // Estimate: anchored so 70% raw ≈ the 720 cut score.
+  const scaled=Math.round(pct<=.70 ? 100+pct/.70*620 : 720+(pct-.70)/.30*280);
+  $("scaled").textContent=scaled;
+  const pass=scaled>=720;
+  $("verdict").innerHTML=`<span class="verdict ${pass?"p":"f"}">${pass?"Pass (≥720)":"Below the 720 cut"}</span>`;
+  $("rawline").textContent=`${tot.correct} of ${tot.n} correct — ${Math.round(pct*100)}% raw`;
+
+  const db=$("dbreak"); db.innerHTML="";
+  Object.keys(DOMAINS).forEach(d=>{
+    const r=per[d]; if(!r)return;
+    const p=Math.round(r.c/r.n*100);
+    const el=document.createElement("div"); el.className="dline";
+    el.innerHTML=`<span>${d}. ${DOMAINS[d]}</span><span class="n">${r.c}/${r.n} · ${p}%</span>
+      <span class="track"><i class="${p>=80?"good":p<60?"poor":""}" style="width:${p}%"></i></span>`;
+    db.appendChild(el);
+  });
+
+  drawReview(false);
+  show("results");
+}
+
+let wrongOnly=false;
+function drawReview(only){
+  wrongOnly=only;
+  $("filterAll").setAttribute("aria-pressed",String(!only));
+  $("filterWrong").setAttribute("aria-pressed",String(only));
+  const box=$("review"); box.innerHTML="";
+  let shown=0;
+  S.items.forEach((it,k)=>{
+    const q=Q(it.qid), ok=same(it.picked,q.answer);
+    if(only&&ok)return;
+    shown++;
+    const yours=it.picked.length
+      ? it.picked.map(i=>"• "+q.choices[i]).join("<br>")
+      : "<em>Not answered</em>";
+    const right=q.answer.map(i=>"• "+q.choices[i]).join("<br>");
+    const d=document.createElement("div"); d.className="rev";
+    d.innerHTML=`
+      <div class="meta"><span class="tag ${ok?"ok":"no"}">${ok?"Correct":"Missed"}</span>
+        Q${k+1} · Domain ${q.domain}</div>
+      <p style="margin:0 0 12px;font-weight:500">${esc(q.q)}</p>
+      <div style="font-size:.9rem;margin-bottom:8px"><strong style="color:var(--ok)">Correct:</strong><br>${right}</div>
+      ${ok?"":`<div style="font-size:.9rem;margin-bottom:8px"><strong style="color:var(--bad)">You chose:</strong><br>${yours}</div>`}
+      <div class="why"><b>Why</b>${esc(q.why)}</div>`;
+    box.appendChild(d);
+  });
+  if(!shown) box.innerHTML='<p style="color:var(--text-dim);margin:0">Nothing missed. Move to a harder mode.</p>';
+}
+$("filterAll").onclick=()=>drawReview(false);
+$("filterWrong").onclick=()=>drawReview(true);
+
+$("again").onclick=()=>{store.clear();location.reload();};
+$("retryWrong").onclick=()=>{
+  const missed=S.items.filter(it=>!same(it.picked,Q(it.qid).answer));
+  if(!missed.length){alert("Nothing to retry.");return;}
+  S={mode:"practice",instant:true,done:false,i:0,endsAt:0,
+     items:missed.map(it=>({qid:it.qid,order:it.order,picked:[],flag:false}))};
+  store.set(S); show("exam"); render(); tick();
+};
+})();
+</script>
+</body>
+</html>
