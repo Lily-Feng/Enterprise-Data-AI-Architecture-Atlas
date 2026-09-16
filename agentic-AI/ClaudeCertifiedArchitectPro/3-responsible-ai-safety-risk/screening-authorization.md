@@ -1,0 +1,55 @@
+Placing screening and authorization so the system degrades safely
+A control that screens requests can fail the same way any dependency fails. It can time out, return an error, or become unreachable under load. The difference is that a failing guardrail can still look healthy: when a screening service errors but still passes traffic through, requests keep flowing while the control does none of the work it was placed there to do. So, when a guardrail errors, the system must do one of two things: let it through or block it. If you have not made that choice explicitly, the surrounding code decides for you. The default is almost always to let the request through, which means falling back to the unprotected path. The same reasoning that put retries and circuit breakers around your model calls applies here: decide how the control behaves when it fails, rather than inheriting whatever behavior happens to keep requests flowing.
+
+Where guardrails sit in a request path
+A guarded request path has a few decision points, each answering a different question.
+
+Input screening runs before the model call and decides whether the request should reach the model at all.
+Output screening runs before the response reaches the user and decides whether what the model produced is safe to return.
+Tool-call authorization runs before any action with side effects, such as sending an email, writing to a database, or issuing a refund, and determines whether this caller may perform this action in this context.
+Because they sit at different points and check different things, a control at one place does nothing for the others, which is why a single filter cannot cover the whole path.
+
+
+Where each check fits: model-based vs deterministic by decision point
+Decision point	A model-based check is needed when	A deterministic check is better when
+Input screening (before the model call)	Intent is ambiguous and you are catching jailbreak or prompt-injection patterns that cannot be exhaustively captured with rules. A lightweight model classifies the input.	The rule is clear and defined: a blocklist, a regex, a length or format check. It is faster, predictable, and cannot be talked out of its decision.
+Output screening (before the response reaches the user)	You are evaluating qualities like toxicity or policy compliance that need language understanding. A judge model scores the output.	You are checking for a known string, a forbidden field, or a schema violation that a validator catches with certainty.
+Tool-call authorization (before any side-effecting action)	Rarely. Authorization should be deterministic, so it is auditable.	Almost always: an allowlist of permitted actions, identity checks, and scope validation. Authorization must be a decision you can prove and replay, so it must be deterministic.
+Why model-based and deterministic checks fail differently, and why you chain them
+A model-based classifier can be evaded: a user can phrase an input in a way that bypasses even the strongest of judge models. A deterministic rule is brittle: it blocks exactly what it is programmed to detect and nothing more. It misses anything it did not anticipate and over-blocks anything that resembles a restricted pattern. There is no control that catches everything, so these controls are deployed in series. Identifying what each one misses ensures each gap is deliberately covered by a different control rather than left open.
+
+A second injection vector: instructions arriving through retrieved content and tool outputs
+User-input screening catches instructions the user sends directly. It does not catch instructions embedded in content the system retrieves or receives from tools. In a RAG system, a malicious instruction in a retrieved document reaches the model after input screening has already passed the request. In an agentic system, a tool response can carry instructions the model treats as authoritative. This is the dominant injection vector in enterprise deployments with retrieval or tool use, and it requires a separate control: screen retrieved content and tool outputs before they are appended to the model's context, using the same model-based classifier you apply to user input. The blind spot is different because the source is different; identify it explicitly in your control design to ensure coverage.
+
+On the API, responses return a refusal when streaming classifiers intervene. The Messages API reports this as stop_reason: "refusal" accompanied by a stop_details object (available since Claude Opus 4.7). That object carries a policy category along with a readable explanation; both fields are null when the refusal does not map to a named category. The category set is enumerated in the stop-reasons documentation on platform.claude.com. As of this writing it includes cyber, bio, frontier_llm, and reasoning_extraction. Re-check the list at publish time rather than hardcoding it. Your application should read the category and route different refusal classes accordingly, rather than treating every refusal as a single, undifferentiated event. On models that do not return stop_details, your handler must tolerate an absent object and fall back to generic handling. Verify current model support against platform.claude.com at publish time. As a rule, once a refusal is received, reset the conversation context before continuing: remove or rephrase the turn that triggered the refusal, or clear the history. Sending the next request on the same refused context returns further refusals.
+
+Fail open versus fail closed: how your guardrail layer behaves under failure
+When the operator-built classifier errors under load, or your operator-built screening service is unreachable, the application does one of two things. It can fail open and pass the traffic through unscreened, or it can fail closed and block any additional actions until the control is healthy again. The choice belongs to you as the Architect; these are components your team builds, hosts and configures. They are separate from Anthropic's built-in model safety controls, which are not operator-configurable and do not fail open. An operator-built guardrail that silently passes traffic when it errors is worse than one that blocks traffic, because it gives you the reassurance of having control while providing none of the protection. This is the same reasoning as the circuit breaker from the production work: when a dependency in your stack is failing, degrade deliberately based on the situation.
+
+The full guarded request path, as one system
+A request moves through the path in order: it arrives, input screening decides whether it reaches the model, the model produces a response, output screening decides whether that response is returned, and any tool call the model emits passes through authorization before it runs. Each gate can pass, block, or fail, and each fail resolves to the direction you chose. Every blocked or failed gate is logged, so an incident can be reconstructed from the record.
+
+The full guarded request path
+User request → Input screening (model-based for ambiguous intent, deterministic for defined rules, set to fail closed)
+→ Model call → Output screening (judge model or validator, set to fail closed)
+→ Tool-call authorization (deterministic allowlist plus identity and scope) before any side-effecting action
+→ Response to user, with every blocked or failed gate logged for later reconstruction
+Skill supply-chain security
+You may hear the following objection in the field: "Skills are a black box. I can't see everything inside one until it runs, so how am I supposed to trust it?" The architect's job is to build a control that compensates for this.
+
+As a reminder, skills are reusable, distributable code paired with an instruction set, bundled together and dropped into your environment. That distribution model is what makes it a supply-chain risk. An untrusted skill can carry a code-execution exploit: logic that runs commands, reaches out to the network, or touches files the moment it's invoked. That's risky because the skill may include hidden malicious instructions that your input filters and prompt screening can't see; these watch the conversation, but the threat was baked into the bundle upstream in the skill. Output monitoring might catch a downstream effect after the fact, but by then the code will have already run.
+
+So, the defense must move earlier in the chain. Before you can trust and call a skill, you need to audit it: open the bundle and read it for two things. First, look for anomalous calls: network requests, shell execution, file-system access, credential reads. Second, out-of-scope operations: behavior that doesn't match the job it claims to perform. A formatting skill that phones home is out of scope; a summarizer that writes to disk is out of scope. The stated purpose of a skill should be your audit baseline, and anything that goes beyond it is a finding you should investigate.
+
+Your audit tells you what's in your bundle; a skill that passes review clean can still reach out at runtime to fetch code that was never in the package you read. That's why the gate needs a net. Run skills with least privilege and in a sandbox giving them limited file access, limited network, no standing credentials they don't need. The audit decides what gets in; runtime confinement contains it if the audit misses something. You should use both, because no single control will work perfectly without the other.
+
+You should also consider where skills are allowed to come from; only trust skills from a vetted internal registry, verified publishers, signed releases only. A trusted-source policy shrinks the surface you must audit and stops untrusted bundles before they reach review. One rule of candor always applies: do not assume the platform screens skills for you. Verify what automated vetting actually exists; read the documentation, confirm the scope of any scanning, find out what it does and doesn't catch.
+
+Every audit must end in an explicitly recorded verdict: approve, reject, or remediate. Approve means it's clean and cleared for use. Reject means it does not enter the environment. Remediate means you found a fixable problem; in this case, strip the offending call, sandbox the operation, pin a safer version, and then re-audit it. Even though you may never see everything a skill can do, the audit verdict and a trusted-source policy are the compensating controls that let you act responsibly.
+
+Cost · Complexity · Risk
+Cost: Each screening point adds a call or a rule evaluation to every request. A judge model on output roughly doubles the model cost for that turn.
+
+Complexity: Three control points, each with a check type, a fail direction, and a log line, are materially more to build and test than a single filter.
+
+Risk: Failing open is the costly mistake: underloading the system quietly drops protection while still appearing guarded, so the gap surfaces only in an incident. This risk does not apply to Anthropic's API-level controls, which are outside your configuration. It applies exclusively to the components your team builds and operates.
