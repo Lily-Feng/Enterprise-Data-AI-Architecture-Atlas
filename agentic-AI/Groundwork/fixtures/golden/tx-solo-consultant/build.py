@@ -187,9 +187,11 @@ tasks = [
     ),
     Task(
         id="T005",
-        title="Set up a Texas franchise tax account with the Comptroller",
-        why="Texas LLCs owe an annual franchise tax report even in years when no "
-            "tax is due, and the report is what keeps the entity in good standing.",
+        title="Set up a Texas franchise tax account and file the annual report",
+        why="A Texas LLC has an annual filing with the Comptroller even when it owes "
+            "no tax. Which filing depends on where the entity sits relative to the no "
+            "tax due threshold, and missing it is what puts the entity out of good "
+            "standing.",
         jurisdiction=TX, agency="Texas Comptroller of Public Accounts",
         official_url=TX_FRANCHISE.url,
         depends_on=["T001"],
@@ -198,7 +200,12 @@ tasks = [
                  "no tax due threshold files a Public Information Report or Ownership "
                  "Report rather than a tax report.",
             hard=True, sources=[TX_NO_TAX_DUE]),
-        common_mistakes=["Assuming no tax due means no filing due. The report is still required."],
+        common_mistakes=[
+            "Assuming no tax due means nothing is due. For report years 2024 and later "
+            "the separate No Tax Due Report was discontinued, but an entity at or below "
+            "the threshold still files a Public Information Report or Ownership Report.",
+            "Looking up the threshold for the wrong report year. It is set per year.",
+        ],
         confidence=0.8,
         sources=[TX_FRANCHISE],
     ),
@@ -297,11 +304,13 @@ elections = [
                  "election is to take effect, or at any time during the preceding tax year.",
             hard=True, sources=[I2553]),
         admin_cost_note="Adds payroll administration and a separate business return.",
-        lost_if_missed="The election generally takes effect the following tax year instead, so a missed "
-                       "window costs a full year of whatever the election was worth.",
-        professional_question="At my projected profit, does this election clear its own administrative "
-                              "cost this year?",
-        sources=[F2553],
+        lost_if_missed="A late election generally takes effect the following tax year. The IRS "
+                       "does document conditional relief for late elections, so a missed window is "
+                       "not automatically a year lost, but relief is conditional and is not "
+                       "something to plan around.",
+        professional_question="I missed (or expect to miss) the window. Do I qualify for late "
+                              "election relief, and what does the filing have to show?",
+        sources=[I2553, I2553_LATE],
     ),
     Election(
         id="E002", name="Business start-up cost deduction",
@@ -310,8 +319,11 @@ elections = [
         eligibility=["Costs incurred before the business began operating",
                      "Costs would have been deductible had the business already been active"],
 
-        lost_if_missed="Receipts discarded before launch cannot be reconstructed later, so this is lost "
-                       "by inaction rather than by decision.",
+        lost_if_missed="Receipts discarded before launch cannot be reconstructed later, so this is "
+                       "lost by inaction rather than by decision.",
+        admin_cost_note="Older guidance cites Publication 535, which the IRS discontinued after its "
+                        "2022 revision. Current material sits in Publication 583 and the Tax Guide "
+                        "for Small Business.",
         professional_question="Which of my pre-launch costs qualify, and how should I be recording them "
                               "starting today?",
         sources=[PUB583, PUB334, PUB535_GONE],
