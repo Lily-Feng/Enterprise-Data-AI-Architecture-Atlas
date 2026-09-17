@@ -10,7 +10,14 @@
     "has_physical_premises": false,
     "regulated_industry": null,
     "funding_intent": "bootstrap",
-    "already_earning": true
+    "already_earning": true,
+    "decided": [
+      {
+        "decision_id": "D001",
+        "choice": "LLC (state legal entity)",
+        "decided_on": null
+      }
+    ]
   },
   "tasks": [
     {
@@ -56,6 +63,7 @@
         15
       ],
       "depends_on": [],
+      "requires_decision": "D001",
       "deadline": null,
       "have_ready": [
         "Entity name plus two alternates",
@@ -105,6 +113,7 @@
       "depends_on": [
         "T001"
       ],
+      "requires_decision": null,
       "deadline": null,
       "have_ready": [
         "Ownership percentages",
@@ -172,6 +181,7 @@
       "depends_on": [
         "T001"
       ],
+      "requires_decision": null,
       "deadline": null,
       "have_ready": [
         "Exact legal entity name as filed",
@@ -222,6 +232,7 @@
         "T002",
         "T003"
       ],
+      "requires_decision": null,
       "deadline": null,
       "have_ready": [
         "Filed Certificate of Formation",
@@ -262,6 +273,7 @@
       "depends_on": [
         "T001"
       ],
+      "requires_decision": null,
       "deadline": {
         "sources": [
           {
@@ -312,6 +324,7 @@
       "depends_on": [
         "T001"
       ],
+      "requires_decision": null,
       "deadline": null,
       "have_ready": [],
       "common_mistakes": [

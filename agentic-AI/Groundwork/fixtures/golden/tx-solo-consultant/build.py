@@ -13,8 +13,8 @@ import sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[3]))
 
 from groundwork.schemas import (  # noqa: E402
-    Deadline, DecisionBrief, Election, FormNumber, FounderProfile, Jurisdiction,
-    Money, Option, Plan, Quote, Source, Task, Tier,
+    Deadline, DecisionBrief, DecisionRecord, Election, FormNumber, FounderProfile,
+    Jurisdiction, Money, Option, Plan, Quote, Source, Task, Tier,
 )
 
 US = Jurisdiction(level="federal", code="US")
@@ -118,9 +118,13 @@ SBA_REGISTER = guidance("https://www.sba.gov/business-guide/launch-your-business
 SBA_INSURANCE = guidance("https://www.sba.gov/business-guide/launch-your-business/get-business-insurance",
                          "SBA - Get business insurance")
 
+# This kit files an LLC, so it presupposes that the founder chose one. That was
+# previously implicit in the task ordering, which let the plan recommend by
+# arrangement. Recording it makes T001 legal and makes the assumption visible.
 profile = FounderProfile(
     sells="services", home_state="TX", owners=1, hiring_within_12mo=False,
     revenue_band_usd="50k_150k", funding_intent="bootstrap", already_earning=True,
+    decided=(DecisionRecord(decision_id="D001", choice="LLC (state legal entity)"),),
 )
 
 tasks = [
@@ -130,6 +134,7 @@ tasks = [
         why="The LLC does not exist until the state accepts this filing, and every "
             "later step depends on it existing.",
         jurisdiction=TX, agency="Texas Secretary of State",
+        requires_decision="D001",
         form=FormNumber(number="Form 205", agency="Texas SOS", sources=[SOS_FORM_205]),
         official_url=SOS_FORMS.url,
         diy_fee=Money(amount_usd=300.00, sources=[SOS_FEES]),

@@ -143,5 +143,25 @@ paths = {p for p, _ in load().iter_claims()}
 check("every claim kind is reachable",
       {"E001.deadline", "E001.form", "T001.diy_fee"} <= paths, str(sorted(paths)))
 
+# 13. The language screen has to read every field a founder sees, not four.
+for field, value in (("title", "You should form an LLC now."),
+                     ("have_ready", ["Go with the S-corp election"])):
+    tainted = load()
+    tainted.tasks[0] = tainted.tasks[0].model_copy(update={field: value})
+    check(f"advisory language in task.{field} is caught",
+          any("advisory" in e for e in errors_for(tainted)))
+
+# 14. A plan can recommend by arrangement. Opening with the LLC filing is a
+#     choice even when no sentence says so.
+assumed = load()
+assumed.profile = assumed.profile.model_copy(update={"decided": ()})
+check("a task presupposing an unrecorded decision is blocked",
+      any("has not recorded making" in e for e in errors_for(assumed)))
+
+dangling = load()
+dangling.tasks[0] = dangling.tasks[0].model_copy(update={"requires_decision": "D099"})
+check("a task presupposing an unbriefed decision is blocked",
+      any("does not brief" in e for e in errors_for(dangling)))
+
 print(f"\n  {sum(results)}/{len(results)} passed")
 raise SystemExit(0 if all(results) else 1)

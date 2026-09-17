@@ -246,6 +246,21 @@ class Quote(BaseModel):
 # --------------------------------------------------------------------------- #
 
 
+class DecisionRecord(BaseModel):
+    """A decision the founder has actually made, and when.
+
+    Without this the plan is free to assume one. With it, a task that
+    presupposes an unmade decision is a validation error rather than a quiet
+    recommendation embedded in the ordering.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    decision_id: str = Field(pattern=r"^D\d{3}$")
+    choice: str = Field(min_length=2)
+    decided_on: date | None = None
+
+
 class FounderProfile(BaseModel):
     """The typed object every downstream artifact keys off.
 
@@ -266,6 +281,10 @@ class FounderProfile(BaseModel):
     regulated_industry: str | None = None  # health, finance, cannabis, alcohol, firearms
     funding_intent: Literal["bootstrap", "raise_later", "raising_now"] = "bootstrap"
     already_earning: bool = False
+    decided: tuple[DecisionRecord, ...] = ()
+
+    def has_decided(self, decision_id: str) -> bool:
+        return any(d.decision_id == decision_id for d in self.decided)
 
     @property
     def out_of_scope_reason(self) -> str | None:
@@ -337,6 +356,7 @@ class Task(BaseModel):
     typical_service_cost: Quote | None = None
     processing_time_days: tuple[int, int] | None = None
     depends_on: list[str] = Field(default_factory=list)
+    requires_decision: str | None = Field(default=None, pattern=r"^D\d{3}$")
     deadline: Deadline | None = None
     have_ready: list[str] = Field(default_factory=list)
     common_mistakes: list[str] = Field(default_factory=list)

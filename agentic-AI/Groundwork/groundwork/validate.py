@@ -23,14 +23,21 @@ from datetime import date
 from typing import Iterable, Literal
 
 from .audit import Run
+from pydantic import BaseModel
+
 from .schemas import Cited, Deadline, Plan, Source, Tier
 
 Mode = Literal["draft", "strict"]
 Severity = Literal["error", "warning"]
 
-# Groundwork routes, cites, and computes. It does not advise. These are the
-# constructions that turn a brief into an opinion, and they are rejected in the
-# generated text rather than discouraged in a prompt.
+# Groundwork routes, cites, and computes. It does not advise.
+#
+# This list is a limited additional check, not the boundary. It catches known
+# constructions in generated prose and will miss paraphrases -- "Elect S-corp
+# status immediately to minimise your tax bill" contains none of these phrases.
+# The load-bearing controls are structural: no recommendation field exists to
+# hold advice, and check_presupposed_decisions stops a plan from recommending
+# by arrangement. Treat a clean language pass as weak evidence.
 ADVISORY_PATTERNS: tuple[tuple[str, str], ...] = (
     (r"\byou should\b", "directive"),
     (r"\bwe recommend\b", "recommendation"),
@@ -63,24 +70,60 @@ class Finding:
         return f"  {mark}  {self.where}: {self.message}"
 
 
+# Field names whose contents are not our prose. `quote` is verbatim text from a
+# government page: screening it would flag the source, not the kit.
+NOT_OUR_WORDS = {"quote", "url", "official_url", "id", "decision_id"}
+
+
 def _text_fields(plan: Plan) -> Iterable[tuple[str, str]]:
-    """Every piece of free text that reaches a founder's eyes."""
-    for d in plan.decisions:
-        yield f"{d.id}.context", d.context
-        yield f"{d.id}.what_actually_differs", d.what_actually_differs
-        yield f"{d.id}.consequences", d.consequences
-        if d.common_misconception:
-            yield f"{d.id}.common_misconception", d.common_misconception
-        for i, o in enumerate(d.options):
-            yield f"{d.id}.options[{i}].what_it_actually_is", o.what_it_actually_is
-            yield f"{d.id}.options[{i}].consequence", o.consequence
+    """Every piece of free text that reaches a founder's eyes.
+
+    Walked generically rather than hand-listed. The hand-listed version read
+    four fields per object and missed `title`, `have_ready`, `eligibility`,
+    `professional_question`, `admin_cost_note` and every option name -- so
+    a task titled "You should form an LLC now." passed.
+    """
+
+    def walk(node: object, path: str) -> Iterable[tuple[str, str]]:
+        if isinstance(node, Source):
+            return
+        if isinstance(node, BaseModel):
+            for name in type(node).model_fields:
+                if name in NOT_OUR_WORDS:
+                    continue
+                yield from walk(getattr(node, name), f"{path}.{name}")
+        elif isinstance(node, str):
+            yield path, node
+        elif isinstance(node, (list, tuple)):
+            for i, item in enumerate(node):
+                yield from walk(item, f"{path}[{i}]")
+
+    for item in (*plan.tasks, *plan.decisions, *plan.elections):
+        yield from walk(item, getattr(item, "id", "?"))
+
+
+def check_presupposed_decisions(plan: Plan) -> list[Finding]:
+    """A task may not presuppose a decision the founder has not made.
+
+    This is the structural half of "never advises". The language screen catches
+    a kit that says "you should form an LLC"; this catches a kit that simply
+    opens with the LLC filing and lets the ordering do the recommending.
+    """
+    out: list[Finding] = []
+    briefs = {d.id for d in plan.decisions}
     for t in plan.tasks:
-        yield f"{t.id}.why", t.why
-        for i, m in enumerate(t.common_mistakes):
-            yield f"{t.id}.common_mistakes[{i}]", m
-    for e in plan.elections:
-        yield f"{e.id}.what_it_does", e.what_it_does
-        yield f"{e.id}.lost_if_missed", e.lost_if_missed
+        if t.requires_decision is None:
+            continue
+        if t.requires_decision not in briefs:
+            out.append(Finding("error", t.id,
+                               f"presupposes decision {t.requires_decision}, which this "
+                               "kit does not brief"))
+        elif not plan.profile.has_decided(t.requires_decision):
+            out.append(Finding("error", t.id,
+                               f"presupposes decision {t.requires_decision}, which the "
+                               "founder has not recorded making; brief it or mark the "
+                               "task conditional"))
+    return out
 
 
 def check_language(plan: Plan) -> list[Finding]:
@@ -300,6 +343,7 @@ def validate(plan: Plan, mode: Mode = "strict") -> tuple[list[Finding], list[str
         *check_jurisdiction(plan),
         *check_sources(plan, mode),
         *check_evidence(plan, mode),
+        *check_presupposed_decisions(plan),
         *check_language(plan),
         *check_completeness(plan),
     ]
