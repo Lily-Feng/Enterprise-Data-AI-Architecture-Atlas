@@ -151,7 +151,7 @@ demonstrate.
 | Coordinator spawns sub-agents to hold context budget | Phase 3 — research forks per task, ≤4 tools, isolated slice |
 | Sequential vs adaptive decomposition | Both: interview → plan is sequential, research → validate → repair is adaptive |
 | **Partial failure retries only the failed unit** | **done** — `repair.py` resends only objects that failed the gate; passing objects carry forward verbatim, so their fetches are not re-run |
-| **Validation failure is fed back and retried** | **done** — `RepairTask.as_prompt()` carries the findings; bounded by `MAX_ROUNDS` |
+| **Validation failure is fed back and retried** | **done** — `run_loop` validates, repairs only what failed, merges, and stops; bounded by round budget and per-object attempts |
 | **Escalate on low confidence or exhausted retries** | **done** — `confidence < 0.75` forces `needs_professional`; `Escalation` carries a structured summary and states that nothing was produced |
 | **Categorical rules, not vague adjectives** | **done** — every gate rule is mechanical: ≥1 tier-1 source, `confidence < 0.75`, 90-day staleness, jurisdiction ∈ {US, home_state} |
 | **Structured tool errors** | **done** — `errors.py`: `is_error`, `category`, `retryable`, `retry_after_ms`, serializing to a `tool_result` payload |

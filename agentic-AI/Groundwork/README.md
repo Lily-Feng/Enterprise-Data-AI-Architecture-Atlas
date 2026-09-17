@@ -177,7 +177,7 @@ notes. Coverage by exam domain:
 | Pattern | State |
 |---|---|
 | Partial failure retries only the failed unit | **done** — [`repair.py`](groundwork/repair.py) |
-| Validation failure fed back and retried, bounded | **done** — `RepairTask.as_prompt()`, `MAX_ROUNDS` |
+| Validation failure fed back and retried, bounded | **done** — `run_loop` enforces a round budget and a per-object attempt cap; the generator is injected, so Phase 3 supplies a model without touching the control flow |
 | Escalate on low confidence, ambiguity, or exhausted retries | **done** — three triggers, see [`schemas.py`](groundwork/schemas.py) and [`repair.py`](groundwork/repair.py) |
 | Categorical rules, never vague adjectives | **done** — every gate rule is mechanically checkable |
 | Structured tool errors with `retryable` and `retry_after_ms` | **done** — [`errors.py`](groundwork/errors.py) |

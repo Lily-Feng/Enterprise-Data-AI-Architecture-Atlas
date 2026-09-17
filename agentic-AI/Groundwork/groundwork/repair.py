@@ -12,16 +12,23 @@ attached, and everything else is carried forward verbatim.
 Findings already name their object (`T001.why`, `D001.consequences`), so the
 scoping falls straight out of the gate's own output.
 
-The loop terminates. After `MAX_ROUNDS` it escalates to a human with a
-structured summary rather than trying forever, because a kit that cannot be
-made to pass is a kit nobody should receive.
+`run_loop` is the loop: validate, hand each failed object back to a generator,
+merge the replacement, repeat. It is bounded twice -- a round budget for the
+whole loop, and a per-object attempt cap, because an object failing the same way
+three times is not going to be argued into passing. When either bound is reached
+it escalates with a structured summary rather than returning a kit that did not
+pass.
+
+The generator is injected rather than called directly, so the control flow is
+testable without an API and Phase 3 can supply a real one without changing it.
 """
 
 from __future__ import annotations
 
 import json
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import Callable
 
 from .audit import Run
 from .schemas import Plan
@@ -163,3 +170,94 @@ def escalate(rounds: int, findings: list[Finding], run: Run | None = None) -> Es
             "These need a person, not another round."
         ),
     )
+
+
+
+# --------------------------------------------------------------------------- #
+# The loop itself
+# --------------------------------------------------------------------------- #
+
+
+Applier = Callable[[RepairTask], object | None]
+
+
+@dataclass
+class Outcome:
+    """What the loop did, whether or not it worked."""
+
+    plan: Plan
+    rounds: int
+    passed: bool
+    escalation: Escalation | None = None
+    attempts: dict[str, int] = field(default_factory=dict)
+
+    def __str__(self) -> str:
+        verdict = "passed" if self.passed else "escalated"
+        return (f"repair {verdict} after {self.rounds} round(s); "
+                f"attempts {self.attempts or '{}'}")
+
+
+def merge(plan: Plan, repaired: object) -> Plan:
+    """Put a regenerated object back, leaving everything else untouched.
+
+    Everything else genuinely untouched matters: the objects that passed were
+    built from fetches against government hosts, and re-rolling them would
+    re-run those side effects for no reason.
+    """
+    oid = getattr(repaired, "id", None)
+    if oid is None:
+        raise ValueError("a repaired object must carry its id")
+    swap = lambda items: [repaired if i.id == oid else i for i in items]  # noqa: E731
+    return plan.model_copy(update={
+        "tasks": swap(plan.tasks),
+        "decisions": swap(plan.decisions),
+        "elections": swap(plan.elections),
+    })
+
+
+def run_loop(plan: Plan, apply: Applier, mode: Mode = "strict",
+             max_rounds: int = MAX_ROUNDS, run: Run | None = None) -> Outcome:
+    """Validate, repair what failed, and stop.
+
+    `apply` is injected rather than called on a model directly, so the loop is
+    testable without an API and so Phase 3 can drop a real generator in without
+    touching the control flow.
+
+    Two bounds, not one. `max_rounds` caps the whole loop; `attempts` caps how
+    many times a single object may be resent, because an object that fails the
+    same way three times is not going to be argued into passing and should stop
+    consuming the budget.
+    """
+    attempts: dict[str, int] = {}
+    current = plan
+
+    for round_no in range(1, max_rounds + 1):
+        repairs, structural, ok = repair_round(current, mode, run=run, round_no=round_no)
+        if ok:
+            return Outcome(current, round_no, True, attempts=attempts)
+        if structural:
+            findings, _ = validate(current, mode)
+            esc = escalate(round_no, findings, run=run)
+            return Outcome(current, round_no, False, esc, attempts)
+
+        progressed = False
+        for task in repairs:
+            if attempts.get(task.object_id, 0) >= max_rounds:
+                continue
+            attempts[task.object_id] = attempts.get(task.object_id, 0) + 1
+            replacement = apply(task)
+            if replacement is None:
+                continue
+            current = merge(current, replacement)
+            progressed = True
+
+        if not progressed:
+            findings, _ = validate(current, mode)
+            esc = escalate(round_no, findings, run=run)
+            if run:
+                run.event("repair_exhausted", round=round_no, attempts=dict(attempts))
+            return Outcome(current, round_no, False, esc, attempts)
+
+    findings, _ = validate(current, mode)
+    return Outcome(current, max_rounds, False,
+                   escalate(max_rounds, findings, run=run), attempts)
