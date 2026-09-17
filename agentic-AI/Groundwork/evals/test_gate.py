@@ -109,5 +109,39 @@ except Exception:
     constructed = False
 check("low-confidence task must escalate", not constructed)
 
+# 10. A citation proves a page was consulted, not that it says what the claim
+#     says. Each of these carries a perfectly well-formed, verified, tier-1
+#     citation and is still false.
+tampered = load()
+fee = tampered.tasks[0].diy_fee
+tampered.tasks[0] = tampered.tasks[0].model_copy(
+    update={"diy_fee": fee.model_copy(update={"amount_usd": 999_999.0})})
+check("a fee contradicting its own quoted evidence is blocked",
+      any("not found in the quote" in e for e in errors_for(tampered)))
+
+# 11. The quote itself has to exist on the retrieved page. Otherwise a model
+#     supplies evidence that says whatever the claim needs.
+invented = load()
+fee = invented.tasks[0].diy_fee
+src = fee.sources[0].model_copy(update={"quote": "the filing fee is $999,999"})
+invented.tasks[0] = invented.tasks[0].model_copy(
+    update={"diy_fee": fee.model_copy(update={"amount_usd": 999_999.0, "sources": [src]})})
+check("quoted evidence absent from the retrieved page is blocked",
+      any("does not appear on the retrieved page" in e for e in errors_for(invented)))
+
+# 12. Traversal has to reach every claim. Election forms, election deadlines and
+#     decision-option costs were all invisible to the old hand-listed walk.
+deep = load()
+dl = deep.elections[0].deadline
+unfetched = dl.sources[0].model_copy(update={"retrieved_at": None})
+deep.elections[0] = deep.elections[0].model_copy(
+    update={"deadline": dl.model_copy(update={"sources": [unfetched]})})
+check("an unfetched source on an election deadline is blocked",
+      any("never retrieved" in e for e in errors_for(deep)))
+
+paths = {p for p, _ in load().iter_claims()}
+check("every claim kind is reachable",
+      {"E001.deadline", "E001.form", "T001.diy_fee"} <= paths, str(sorted(paths)))
+
 print(f"\n  {sum(results)}/{len(results)} passed")
 raise SystemExit(0 if all(results) else 1)

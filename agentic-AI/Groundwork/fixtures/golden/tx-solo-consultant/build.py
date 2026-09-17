@@ -31,6 +31,11 @@ def guidance(url: str, title: str) -> Source:
 
 SOS_FORMS = gov("https://www.sos.state.tx.us/corp/forms_boc.shtml",
                 "Texas SOS - Business Organizations Code Forms")
+SOS_FORM_205 = Source(
+    url="https://www.sos.state.tx.us/corp/forms_boc.shtml",
+    tier=Tier.PRIMARY, title="Texas SOS - Business Organizations Code Forms",
+    quote="Form 205 - Certificate of Formation for a Limited Liability Company",
+)
 SOS_FEES = Source(
     url="https://direct.sos.state.tx.us/help/help-corp.asp?pg=fee",
     tier=Tier.PRIMARY,
@@ -40,17 +45,74 @@ SOS_FEES = Source(
 )
 EIN = gov("https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
           "IRS - Apply for an EIN Online")
+EIN_FREE = Source(
+    url="https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
+    tier=Tier.PRIMARY, title="IRS - Apply for an EIN Online",
+    quote="Beware of websites that charge for an EIN. You never have to pay a fee for an EIN.",
+)
 SS4 = gov("https://www.irs.gov/forms-pubs/about-form-ss-4", "IRS - About Form SS-4")
+SS4_FORM = Source(
+    url="https://www.irs.gov/forms-pubs/about-form-ss-4", tier=Tier.PRIMARY,
+    title="IRS - About Form SS-4",
+    quote="Use Form SS-4 to apply for an employer identification number (EIN).",
+)
 F2553 = gov("https://www.irs.gov/forms-pubs/about-form-2553",
             "IRS - About Form 2553, Election by a Small Business Corporation")
+F2553_FORM = Source(
+    url="https://www.irs.gov/forms-pubs/about-form-2553", tier=Tier.PRIMARY,
+    title="IRS - About Form 2553, Election by a Small Business Corporation",
+    quote="About Form 2553, Election by a Small Business Corporation",
+)
 TX_FRANCHISE = gov("https://comptroller.texas.gov/taxes/franchise/",
                    "Texas Comptroller - Franchise Tax")
-PUB535 = gov("https://www.irs.gov/forms-pubs/about-publication-535",
-             "IRS - About Publication 535, Business Expenses")
+TX_NO_TAX_DUE = Source(
+    url="https://comptroller.texas.gov/taxes/franchise/", tier=Tier.PRIMARY,
+    title="Texas Comptroller - Franchise Tax",
+    quote="If you are at or below the no tax due threshold, simply file your 2026 "
+          "Public Information Report or Ownership Report.",
+)
+# Publication 535 is retained only as evidence that it was discontinued.
+PUB535_GONE = Source(
+    url="https://www.irs.gov/forms-pubs/about-publication-535", tier=Tier.PRIMARY,
+    title="IRS - About Publication 535, Business Expenses",
+    quote="Note: We have discontinued Publication 535, Business Expenses; the last "
+          "revision was for 2022.",
+)
+I2553 = Source(
+    url="https://www.irs.gov/instructions/i2553", tier=Tier.PRIMARY,
+    title="IRS - Instructions for Form 2553",
+    quote="No more than 2 months and 15 days after the beginning of the tax year the "
+          "election is to take effect, or",
+)
+I2553_LATE = Source(
+    url="https://www.irs.gov/instructions/i2553", tier=Tier.PRIMARY,
+    title="IRS - Instructions for Form 2553",
+    quote="Relief for Late Elections",
+)
+PUB583 = Source(
+    url="https://www.irs.gov/publications/p583", tier=Tier.PRIMARY,
+    title="IRS - Publication 583, Starting a Business and Keeping Records",
+    quote="You can elect to deduct up to $5,000 of business start-up costs",
+)
+PUB560_DUE = Source(
+    url="https://www.irs.gov/publications/p560", tier=Tier.PRIMARY,
+    title="IRS - Publication 560, Retirement Plans for Small Business",
+    quote="You can make deductible contributions for a tax year up to the due date of "
+          "your return (plus extensions) for that year.",
+)
+PUB334 = Source(
+    url="https://www.irs.gov/forms-pubs/about-publication-334", tier=Tier.PRIMARY,
+    title="IRS - About Publication 334, Tax Guide for Small Business",
+    quote="About Publication 334, Tax Guide for Small Business",
+)
 PUB587 = gov("https://www.irs.gov/forms-pubs/about-publication-587",
              "IRS - About Publication 587, Business Use of Your Home")
-PUB560 = gov("https://www.irs.gov/forms-pubs/about-publication-560",
-             "IRS - About Publication 560, Retirement Plans for Small Business")
+PUB560 = Source(
+    url="https://www.irs.gov/forms-pubs/about-publication-560", tier=Tier.PRIMARY,
+    title="IRS - About Publication 560, Retirement Plans for Small Business",
+    quote="About Publication 560, Retirement Plans for Small Business "
+          "(SEP, SIMPLE and Qualified Plans)",
+)
 SBA_REGISTER = guidance("https://www.sba.gov/business-guide/launch-your-business/register-your-business",
                         "SBA - Register your business")
 SBA_INSURANCE = guidance("https://www.sba.gov/business-guide/launch-your-business/get-business-insurance",
@@ -68,7 +130,7 @@ tasks = [
         why="The LLC does not exist until the state accepts this filing, and every "
             "later step depends on it existing.",
         jurisdiction=TX, agency="Texas Secretary of State",
-        form=FormNumber(number="Form 205", agency="Texas SOS", sources=[SOS_FORMS]),
+        form=FormNumber(number="Form 205", agency="Texas SOS", sources=[SOS_FORM_205]),
         official_url=SOS_FORMS.url,
         diy_fee=Money(amount_usd=300.00, sources=[SOS_FEES]),
         processing_time_days=(3, 15),
@@ -98,9 +160,9 @@ tasks = [
         why="The EIN is the business's tax identity and is required to open a "
             "business bank account without using a Social Security number.",
         jurisdiction=US, agency="IRS",
-        form=FormNumber(number="Form SS-4", agency="IRS", sources=[SS4]),
+        form=FormNumber(number="Form SS-4", agency="IRS", sources=[SS4_FORM]),
         official_url=EIN.url,
-        diy_fee=Money(amount_usd=0.00, sources=[EIN]),
+        diy_fee=Money(amount_usd=0.00, sources=[EIN_FREE]),
         processing_time_days=(0, 1),
         depends_on=["T001"],
         have_ready=["Exact legal entity name as filed", "Formation date and state", "Responsible party SSN or ITIN"],
@@ -131,8 +193,11 @@ tasks = [
         jurisdiction=TX, agency="Texas Comptroller of Public Accounts",
         official_url=TX_FRANCHISE.url,
         depends_on=["T001"],
-        deadline=Deadline(rule="Annual report is due each May 15 for the prior reporting year.",
-                          hard=True, sources=[TX_FRANCHISE]),
+        deadline=Deadline(
+            rule="Franchise tax reports are due each May 15. An entity at or below the "
+                 "no tax due threshold files a Public Information Report or Ownership "
+                 "Report rather than a tax report.",
+            hard=True, sources=[TX_NO_TAX_DUE]),
         common_mistakes=["Assuming no tax due means no filing due. The report is still required."],
         confidence=0.8,
         sources=[TX_FRANCHISE],
@@ -223,14 +288,14 @@ elections = [
         id="E001", name="S corporation election",
         what_it_does="Changes how an existing LLC's profit is taxed by splitting it into reasonable "
                      "salary and distribution, which changes the self-employment tax base.",
-        form=FormNumber(number="Form 2553", agency="IRS", sources=[F2553]),
+        form=FormNumber(number="Form 2553", agency="IRS", sources=[F2553_FORM]),
         eligibility=["A domestic entity with allowable shareholders",
                      "One class of stock or equivalent membership interest",
                      "All owners consent"],
         deadline=Deadline(
             rule="No more than two months and fifteen days after the beginning of the tax year the "
                  "election is to take effect, or at any time during the preceding tax year.",
-            hard=True, sources=[F2553]),
+            hard=True, sources=[I2553]),
         admin_cost_note="Adds payroll administration and a separate business return.",
         lost_if_missed="The election generally takes effect the following tax year instead, so a missed "
                        "window costs a full year of whatever the election was worth.",
@@ -244,13 +309,12 @@ elections = [
                      "before it opened to be deducted, with the remainder amortized.",
         eligibility=["Costs incurred before the business began operating",
                      "Costs would have been deductible had the business already been active"],
-        deadline=Deadline(rule="Claimed on the return for the tax year the business begins operating.",
-                          hard=True, sources=[PUB535]),
+
         lost_if_missed="Receipts discarded before launch cannot be reconstructed later, so this is lost "
                        "by inaction rather than by decision.",
         professional_question="Which of my pre-launch costs qualify, and how should I be recording them "
                               "starting today?",
-        sources=[PUB535],
+        sources=[PUB583, PUB334, PUB535_GONE],
     ),
     Election(
         id="E003", name="Business use of home deduction",
@@ -269,15 +333,17 @@ elections = [
         what_it_does="Creates a retirement plan for an owner-only business, with contribution room well "
                      "above an individual retirement account.",
         eligibility=["Self-employment income", "No employees other than a spouse"],
-        deadline=Deadline(rule="Plan establishment and funding deadlines differ by plan type and are "
-                               "tied to the business's tax year and return due date.",
-                          hard=True, sources=[PUB560]),
+        deadline=Deadline(
+            rule="Deductible contributions for a tax year may be made up to the due date "
+                 "of the return, plus extensions, for that year. Establishment deadlines "
+                 "differ by plan type and must be confirmed per plan.",
+            hard=True, sources=[PUB560_DUE]),
         admin_cost_note="Some plan types require an annual filing once assets pass a threshold.",
         lost_if_missed="A plan not established within its window cannot be applied retroactively to that "
                        "tax year.",
         professional_question="Which plan type fits my income, and what is the establishment deadline "
                               "for the current tax year?",
-        sources=[PUB560],
+        sources=[PUB560_DUE],
     ),
 ]
 

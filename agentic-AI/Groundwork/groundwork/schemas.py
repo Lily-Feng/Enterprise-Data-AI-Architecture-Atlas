@@ -14,7 +14,9 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from enum import IntEnum
-from typing import Annotated, Literal
+from typing import Annotated, Iterator, Literal
+
+import re
 
 from pydantic import (
     BaseModel,
@@ -29,6 +31,8 @@ from pydantic import (
 # filing deadlines turn over annually, and a confidently wrong fee is the exact
 # failure this project exists to prevent.
 STALE_AFTER = timedelta(days=90)
+
+WS_RE = re.compile(r"\s+")
 
 
 class Tier(IntEnum):
@@ -107,8 +111,14 @@ class Source(BaseModel):
 class Cited(BaseModel):
     """Base for any value a founder will act on. Requires a tier-1 source.
 
-    This is the whole enforcement mechanism. Subclass it and the field becomes
-    impossible to state without an official citation behind it.
+    A citation proves a page was consulted. It does not prove the page says
+    what the claim says -- a fee of $999,999 cited to a schedule reading $300
+    satisfies every structural rule here and is still a lie.
+
+    So a citation is necessary and not sufficient. `supports()` is where each
+    subclass states what its evidence must actually contain, and
+    `validate.check_evidence` is what confronts that evidence with the text
+    the fetcher really retrieved.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -125,6 +135,26 @@ class Cited(BaseModel):
             )
         return sources
 
+    @property
+    def evidence(self) -> Source | None:
+        """The tier-1 source carrying a quote, if any."""
+        for s in self.sources:
+            if s.tier is Tier.PRIMARY and s.quote:
+                return s
+        return None
+
+    def supports(self, quote: str) -> bool:
+        """Does this quote actually contain the claim?
+
+        Subclasses that assert a checkable value override this. The base case
+        is deliberately conservative: unknown claim shapes are not waved
+        through.
+        """
+        return False
+
+    def claim(self) -> str:
+        return str(self)
+
 
 class Money(Cited):
     """A dollar amount that came from an official fee schedule."""
@@ -133,6 +163,22 @@ class Money(Cited):
 
     def __str__(self) -> str:
         return f"${self.amount_usd:,.2f}"
+
+    def supports(self, quote: str) -> bool:
+        """The amount has to appear in the quoted text, in some readable form.
+
+        A zero fee is the awkward case: pages say "no fee" or "free" rather
+        than "$0.00", so those phrasings count as the amount appearing.
+        """
+        text = WS_RE.sub(" ", quote.lower())
+        if self.amount_usd == 0:
+            return any(p in text for p in ("no fee", "no charge", "free of charge",
+                                           "at no cost", "for free", "$0",
+                                           "never have to pay", "without charge"))
+        whole = int(self.amount_usd)
+        forms = {f"${whole:,}", f"${whole}", f"{whole:,}", str(whole),
+                 f"${self.amount_usd:,.2f}", f"${self.amount_usd:.2f}"}
+        return any(f.lower() in text for f in forms)
 
 
 class FormNumber(Cited):
@@ -144,6 +190,12 @@ class FormNumber(Cited):
 
     def __str__(self) -> str:
         return f"{self.agency} {self.number}"
+
+    def supports(self, quote: str) -> bool:
+        """The form number itself has to be in the quoted text."""
+        text = WS_RE.sub(" ", quote.lower())
+        n = self.number.lower()
+        return n in text or n.replace("form ", "") in text
 
 
 class Deadline(Cited):
@@ -157,6 +209,21 @@ class Deadline(Cited):
     rule: str = Field(min_length=10)
     resolved: date | None = None
     hard: bool = True  # False for "recommended by", True for "you lose the option"
+
+    def claim(self) -> str:
+        return self.rule
+
+    def supports(self, quote: str) -> bool:
+        """A deadline rule is prose and cannot be matched mechanically.
+
+        What can be required is that the quote carries the words a deadline is
+        made of. This is the weakest of the three checks and is documented as
+        such rather than presented as equivalent to the fee and form checks.
+        """
+        text = WS_RE.sub(" ", quote.lower())
+        markers = ("day", "month", "year", "due", "deadline", "no later",
+                   "within", "before", "by the", "anniversary")
+        return any(m in text for m in markers)
 
 
 class Quote(BaseModel):
@@ -337,14 +404,52 @@ class Plan(BaseModel):
     def total_savings(self) -> float:
         return sum(t.savings_usd for t in self.tasks)
 
+    def iter_claims(self) -> Iterator[tuple[str, Cited]]:
+        """Every Cited value anywhere in the plan, with the path that reaches it.
+
+        Written as a full recursive walk rather than a hand-listed set of
+        fields. The hand-listed version silently skipped election forms,
+        election deadlines, and decision-option costs, so an unfetched source
+        on any of them passed strict validation.
+        """
+
+        def walk(node: object, path: str) -> Iterator[tuple[str, Cited]]:
+            if isinstance(node, Cited):
+                yield path, node
+            if isinstance(node, BaseModel):
+                for name in type(node).model_fields:
+                    yield from walk(getattr(node, name), f"{path}.{name}")
+            elif isinstance(node, (list, tuple)):
+                for i, item in enumerate(node):
+                    yield from walk(item, f"{path}[{i}]")
+
+        for group, items in (("tasks", self.tasks), ("decisions", self.decisions),
+                             ("elections", self.elections)):
+            for item in items:
+                yield from walk(item, getattr(item, "id", group))
+
+    def iter_sources(self) -> Iterator[tuple[str, Source]]:
+        """Every Source anywhere, with its path. Not deduplicated: the same URL
+        used in two places has to be checked in both."""
+
+        def walk(node: object, path: str) -> Iterator[tuple[str, Source]]:
+            if isinstance(node, Source):
+                yield path, node
+                return
+            if isinstance(node, BaseModel):
+                for name in type(node).model_fields:
+                    yield from walk(getattr(node, name), f"{path}.{name}")
+            elif isinstance(node, (list, tuple)):
+                for i, item in enumerate(node):
+                    yield from walk(item, f"{path}[{i}]")
+
+        for item in (*self.tasks, *self.decisions, *self.elections):
+            yield from walk(item, getattr(item, "id", "?"))
+
     def all_sources(self) -> list[Source]:
+        """Distinct sources, for reporting. Validation uses iter_sources so that
+        the same URL cited in two places is checked in both."""
         seen: dict[str, Source] = {}
-        for holder in (*self.tasks, *self.decisions, *self.elections):
-            for s in holder.sources:
-                seen.setdefault(str(s.url), s)
-        for t in self.tasks:
-            for cited in (t.diy_fee, t.form, t.deadline, t.typical_service_cost):
-                if cited is not None:
-                    for s in cited.sources:
-                        seen.setdefault(str(s.url), s)
+        for _, s in self.iter_sources():
+            seen.setdefault(str(s.url), s)
         return list(seen.values())

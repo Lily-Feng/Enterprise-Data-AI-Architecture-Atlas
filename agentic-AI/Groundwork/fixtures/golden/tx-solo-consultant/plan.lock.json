@@ -24,6 +24,11 @@
     "fingerprint": "7b13f6599af7c229",
     "status": 200
   },
+  "https://www.irs.gov/forms-pubs/about-publication-334": {
+    "checked": "2026-09-16",
+    "fingerprint": "954f11a067870681",
+    "status": 200
+  },
   "https://www.irs.gov/forms-pubs/about-publication-535": {
     "checked": "2026-09-16",
     "fingerprint": "197783955c5ec612",
@@ -37,6 +42,21 @@
   "https://www.irs.gov/forms-pubs/about-publication-587": {
     "checked": "2026-09-16",
     "fingerprint": "9965a2fe38cf263b",
+    "status": 200
+  },
+  "https://www.irs.gov/instructions/i2553": {
+    "checked": "2026-09-16",
+    "fingerprint": "c92cd542f114862e",
+    "status": 200
+  },
+  "https://www.irs.gov/publications/p560": {
+    "checked": "2026-09-16",
+    "fingerprint": "4c1d414298dd0fbc",
+    "status": 200
+  },
+  "https://www.irs.gov/publications/p583": {
+    "checked": "2026-09-16",
+    "fingerprint": "3ef0d5081c4d9f5e",
     "status": 200
   },
   "https://www.sba.gov/business-guide/launch-your-business/get-business-insurance": {

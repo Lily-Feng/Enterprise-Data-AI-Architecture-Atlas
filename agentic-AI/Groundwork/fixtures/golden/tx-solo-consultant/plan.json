@@ -30,7 +30,7 @@
             "title": "Texas SOS - Business Organizations Code Forms",
             "retrieved_at": "2026-09-16",
             "effective_date": null,
-            "quote": null
+            "quote": "Form 205 - Certificate of Formation for a Limited Liability Company"
           }
         ],
         "number": "Form 205",
@@ -144,7 +144,7 @@
             "title": "IRS - About Form SS-4",
             "retrieved_at": "2026-09-16",
             "effective_date": null,
-            "quote": null
+            "quote": "Use Form SS-4 to apply for an employer identification number (EIN)."
           }
         ],
         "number": "Form SS-4",
@@ -159,7 +159,7 @@
             "title": "IRS - Apply for an EIN Online",
             "retrieved_at": "2026-09-16",
             "effective_date": null,
-            "quote": null
+            "quote": "Beware of websites that charge for an EIN. You never have to pay a fee for an EIN."
           }
         ],
         "amount_usd": 0.0
@@ -270,10 +270,10 @@
             "title": "Texas Comptroller - Franchise Tax",
             "retrieved_at": "2026-09-16",
             "effective_date": null,
-            "quote": null
+            "quote": "If you are at or below the no tax due threshold, simply file your 2026 Public Information Report or Ownership Report."
           }
         ],
-        "rule": "Annual report is due each May 15 for the prior reporting year.",
+        "rule": "Franchise tax reports are due each May 15. An entity at or below the no tax due threshold files a Public Information Report or Ownership Report rather than a tax report.",
         "resolved": null,
         "hard": true
       },
@@ -438,7 +438,7 @@
             "title": "IRS - About Form 2553, Election by a Small Business Corporation",
             "retrieved_at": "2026-09-16",
             "effective_date": null,
-            "quote": null
+            "quote": "About Form 2553, Election by a Small Business Corporation"
           }
         ],
         "number": "Form 2553",
@@ -452,12 +452,12 @@
       "deadline": {
         "sources": [
           {
-            "url": "https://www.irs.gov/forms-pubs/about-form-2553",
+            "url": "https://www.irs.gov/instructions/i2553",
             "tier": 1,
-            "title": "IRS - About Form 2553, Election by a Small Business Corporation",
+            "title": "IRS - Instructions for Form 2553",
             "retrieved_at": "2026-09-16",
             "effective_date": null,
-            "quote": null
+            "quote": "No more than 2 months and 15 days after the beginning of the tax year the election is to take effect, or"
           }
         ],
         "rule": "No more than two months and fifteen days after the beginning of the tax year the election is to take effect, or at any time during the preceding tax year.",
@@ -487,32 +487,34 @@
         "Costs incurred before the business began operating",
         "Costs would have been deductible had the business already been active"
       ],
-      "deadline": {
-        "sources": [
-          {
-            "url": "https://www.irs.gov/forms-pubs/about-publication-535",
-            "tier": 1,
-            "title": "IRS - About Publication 535, Business Expenses",
-            "retrieved_at": "2026-09-16",
-            "effective_date": null,
-            "quote": null
-          }
-        ],
-        "rule": "Claimed on the return for the tax year the business begins operating.",
-        "resolved": null,
-        "hard": true
-      },
+      "deadline": null,
       "admin_cost_note": null,
       "lost_if_missed": "Receipts discarded before launch cannot be reconstructed later, so this is lost by inaction rather than by decision.",
       "professional_question": "Which of my pre-launch costs qualify, and how should I be recording them starting today?",
       "sources": [
+        {
+          "url": "https://www.irs.gov/publications/p583",
+          "tier": 1,
+          "title": "IRS - Publication 583, Starting a Business and Keeping Records",
+          "retrieved_at": "2026-09-16",
+          "effective_date": null,
+          "quote": "You can elect to deduct up to $5,000 of business start-up costs"
+        },
+        {
+          "url": "https://www.irs.gov/forms-pubs/about-publication-334",
+          "tier": 1,
+          "title": "IRS - About Publication 334, Tax Guide for Small Business",
+          "retrieved_at": "2026-09-16",
+          "effective_date": null,
+          "quote": "About Publication 334, Tax Guide for Small Business"
+        },
         {
           "url": "https://www.irs.gov/forms-pubs/about-publication-535",
           "tier": 1,
           "title": "IRS - About Publication 535, Business Expenses",
           "retrieved_at": "2026-09-16",
           "effective_date": null,
-          "quote": null
+          "quote": "Note: We have discontinued Publication 535, Business Expenses; the last revision was for 2022."
         }
       ]
     },
@@ -552,15 +554,15 @@
       "deadline": {
         "sources": [
           {
-            "url": "https://www.irs.gov/forms-pubs/about-publication-560",
+            "url": "https://www.irs.gov/publications/p560",
             "tier": 1,
-            "title": "IRS - About Publication 560, Retirement Plans for Small Business",
+            "title": "IRS - Publication 560, Retirement Plans for Small Business",
             "retrieved_at": "2026-09-16",
             "effective_date": null,
-            "quote": null
+            "quote": "You can make deductible contributions for a tax year up to the due date of your return (plus extensions) for that year."
           }
         ],
-        "rule": "Plan establishment and funding deadlines differ by plan type and are tied to the business's tax year and return due date.",
+        "rule": "Deductible contributions for a tax year may be made up to the due date of the return, plus extensions, for that year. Establishment deadlines differ by plan type and must be confirmed per plan.",
         "resolved": null,
         "hard": true
       },
@@ -569,12 +571,12 @@
       "professional_question": "Which plan type fits my income, and what is the establishment deadline for the current tax year?",
       "sources": [
         {
-          "url": "https://www.irs.gov/forms-pubs/about-publication-560",
+          "url": "https://www.irs.gov/publications/p560",
           "tier": 1,
-          "title": "IRS - About Publication 560, Retirement Plans for Small Business",
+          "title": "IRS - Publication 560, Retirement Plans for Small Business",
           "retrieved_at": "2026-09-16",
           "effective_date": null,
-          "quote": null
+          "quote": "You can make deductible contributions for a tax year up to the due date of your return (plus extensions) for that year."
         }
       ]
     }

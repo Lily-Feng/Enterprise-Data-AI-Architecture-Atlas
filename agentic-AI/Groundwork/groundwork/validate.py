@@ -15,6 +15,7 @@ Two modes:
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from dataclasses import dataclass
@@ -22,7 +23,7 @@ from datetime import date
 from typing import Iterable, Literal
 
 from .audit import Run
-from .schemas import Plan, Source, Tier
+from .schemas import Cited, Deadline, Plan, Source, Tier
 
 Mode = Literal["draft", "strict"]
 Severity = Literal["error", "warning"]
@@ -98,11 +99,90 @@ def check_language(plan: Plan) -> list[Finding]:
     return out
 
 
+CHUNKS = __import__("pathlib").Path(__file__).resolve().parent.parent / "corpus" / "chunks.jsonl"
+_WS = re.compile(r"\s+")
+
+
+def _retrieved_text() -> dict[str, str]:
+    """What the fetcher actually pulled down, keyed by URL.
+
+    This is the trust boundary. A model can write any `retrieved_at` and any
+    `quote` it likes into a plan; it cannot put text into the corpus, because
+    the corpus is written by the fetcher from bytes the server returned. So
+    evidence is confronted with this, never with the plan's own say-so.
+    """
+    if not CHUNKS.exists():
+        return {}
+    joined: dict[str, list[str]] = {}
+    for line in CHUNKS.read_text().splitlines():
+        if not line.strip():
+            continue
+        c = json.loads(line)
+        joined.setdefault(c["url"], []).append(c["text"])
+    return {u: _WS.sub(" ", " ".join(parts)).lower() for u, parts in joined.items()}
+
+
+def check_evidence(plan: Plan, mode: Mode) -> list[Finding]:
+    """Every fee, form number and deadline must be carried by its own evidence.
+
+    A citation proves a page was consulted. It does not prove the page says
+    what the claim says. Three things are required here, and the claim is
+    blocked if any fails:
+
+      1. a tier-1 source carrying a quote,
+      2. the quote actually contains the claim (see `Cited.supports`),
+      3. the quote actually appears in what the fetcher retrieved.
+
+    (3) is what makes (1) and (2) worth anything. Without it a model could
+    supply a quote that says whatever the claim needs it to say.
+
+    Deadlines are the weak case: a rule expressed in prose cannot be matched
+    against a page mechanically, so (2) only confirms the quote is deadline-
+    shaped. That limit is real and is reported as such rather than papered over.
+    """
+    out: list[Finding] = []
+    corpus = _retrieved_text()
+    for path, claim in plan.iter_claims():
+        ev = claim.evidence
+        if ev is None:
+            out.append(Finding("error", path,
+                               f"{type(claim).__name__} states a fact with no quoted "
+                               "tier-1 evidence; a bare citation is not proof"))
+            continue
+        if not claim.supports(ev.quote or ""):
+            out.append(Finding("error", path,
+                               f"quoted evidence does not contain the claim "
+                               f"({claim.claim()!r} not found in the quote)"))
+        if not corpus:
+            sev: Severity = "error" if mode == "strict" else "warning"
+            out.append(Finding(sev, path,
+                               "no retrieved corpus to check this evidence against; "
+                               "run: python3 -m groundwork.corpus refresh"))
+            continue
+        page = corpus.get(str(ev.url))
+        if page is None:
+            sev = "error" if mode == "strict" else "warning"
+            out.append(Finding(sev, path,
+                               f"{ev.url} is cited but not in the corpus; add it to "
+                               "corpus/manifest.json so its evidence can be checked"))
+        elif _WS.sub(" ", ev.quote).strip().lower() not in page:
+            out.append(Finding("error", path,
+                               "the quoted evidence does not appear on the retrieved "
+                               f"page ({ev.url})"))
+    return out
+
+
 def check_sources(plan: Plan, mode: Mode) -> list[Finding]:
+    """Every source reference, not every distinct URL.
+
+    Deduplicating by URL hid unverified references: the same page cited once
+    with a retrieval date and once without collapsed to a single 'verified'
+    entry.
+    """
     out: list[Finding] = []
     today = date.today()
-    for s in plan.all_sources():
-        where = str(s.url)
+    for path, s in plan.iter_sources():
+        where = f"{path} ({s.url})"
         if not s.verified:
             if mode == "strict":
                 out.append(Finding("error", where, "cited but never retrieved"))
@@ -219,6 +299,7 @@ def validate(plan: Plan, mode: Mode = "strict") -> tuple[list[Finding], list[str
         *graph_findings,
         *check_jurisdiction(plan),
         *check_sources(plan, mode),
+        *check_evidence(plan, mode),
         *check_language(plan),
         *check_completeness(plan),
     ]
