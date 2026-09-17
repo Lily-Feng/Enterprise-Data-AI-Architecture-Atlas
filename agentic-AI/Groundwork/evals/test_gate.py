@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import pathlib
 import sys
+from datetime import date
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 
@@ -162,6 +163,44 @@ dangling = load()
 dangling.tasks[0] = dangling.tasks[0].model_copy(update={"requires_decision": "D099"})
 check("a task presupposing an unbriefed decision is blocked",
       any("does not brief" in e for e in errors_for(dangling)))
+
+# 15. Scope has to act on every risk flag it collects, not three of seven.
+base = dict(sells="services", home_state="TX", owners=1,
+            hiring_within_12mo=False, revenue_band_usd="50k_150k")
+for field, value in (("sells", "mixed"), ("touches_client_funds", True),
+                     ("touches_regulated_data", True)):
+    prof = FounderProfile(**{**base, field: value})
+    check(f"{field}={value!r} is routed out of scope", prof.out_of_scope_reason is not None)
+
+# 16. An unanswered question must not become a default the plan treats as fact.
+prof = FounderProfile(**base, unknowns=("tax_year_end",))
+check("a declared unknown is not knowable", not prof.knows("tax_year_end"))
+check("an absent field is not knowable", not FounderProfile(**base).knows("formation_date"))
+
+# 17. The calendar has to contain dates.
+dated = [(p, c.resolved) for p, c in load().iter_claims() if getattr(c, "resolved", None)]
+check("resolvable deadlines ship as dates", len(dated) >= 2, str(dated))
+
+wrong = load()
+dl = wrong.tasks[4].deadline
+wrong.tasks[4] = wrong.tasks[4].model_copy(
+    update={"deadline": dl.model_copy(update={"resolved": date(2030, 1, 1)})})
+check("a deadline contradicting its own rule is blocked",
+      any("the rule computes" in e for e in errors_for(wrong)))
+
+# 18. Escalation is not closed by asserting it. Flagging a task as needing
+#     review used to be enough; the review now has to have happened.
+needs_review = load().tasks[5].model_dump()
+try:
+    Task(**{**needs_review, "status": "ready", "review": None})
+    ok = False
+except Exception:
+    ok = True
+check("a task needing review cannot call itself ready", ok)
+
+reviewed = Task(**{**needs_review, "status": "ready",
+                   "review": {"reviewed_by": "a licensed agent", "reviewed_on": "2026-09-16"}})
+check("a recorded review lets it become ready", reviewed.status == "ready")
 
 print(f"\n  {sum(results)}/{len(results)} passed")
 raise SystemExit(0 if all(results) else 1)

@@ -25,6 +25,7 @@ from typing import Iterable, Literal
 from .audit import Run
 from pydantic import BaseModel
 
+from .calendar import resolve, unmet
 from .schemas import Cited, Deadline, Plan, Source, Tier
 
 Mode = Literal["draft", "strict"]
@@ -318,6 +319,67 @@ def check_scope(plan: Plan) -> list[Finding]:
     return []
 
 
+def check_calendar(plan: Plan) -> list[Finding]:
+    """A deadline the kit can compute, it must compute.
+
+    The alternative is a calendar full of nulls, which is what the kit shipped
+    before this existed. Where a fact is genuinely missing the deadline stays
+    unresolved and says which fact it is waiting on -- that is information, and
+    a null is not.
+    """
+    out: list[Finding] = []
+    by_id = {t.id: t for t in plan.tasks}
+    for path, claim in plan.iter_claims():
+        if not isinstance(claim, Deadline):
+            continue
+        missing = unmet(claim, plan.profile)
+        if missing:
+            owner_id = path.split(".", 1)[0]
+            task = by_id.get(owner_id)
+            if task is not None and task.status == "ready":
+                out.append(Finding("error", path,
+                                   f"waiting on {list(missing)} but its task is "
+                                   "status='ready'; use 'needs_info'"))
+            elif task is None and not plan.profile.unknowns:
+                out.append(Finding("warning", path,
+                                   f"waiting on {list(missing)}, which the profile does "
+                                   "not record as unknown"))
+            continue
+        computed = resolve(claim, plan.profile)
+        if computed is not None and claim.resolved is None:
+            out.append(Finding("error", path,
+                               f"is computable ({computed.isoformat()}) but ships "
+                               "unresolved; the kit promises a calendar"))
+        elif computed is not None and claim.resolved != computed:
+            out.append(Finding("error", path,
+                               f"resolved to {claim.resolved} but the rule computes "
+                               f"{computed.isoformat()}"))
+        elif claim.resolved is not None and claim.hard and claim.resolved < date.today():
+            out.append(Finding("warning", path,
+                               f"resolved to {claim.resolved.isoformat()}, which has "
+                               "already passed; the kit must say so rather than list it "
+                               "as upcoming"))
+        elif claim.resolver is None and claim.hard:
+            out.append(Finding("warning", path,
+                               "is a hard deadline with no resolver, so it cannot reach "
+                               "the calendar"))
+    return out
+
+
+def check_readiness(plan: Plan) -> list[Finding]:
+    """A task that asked for review may not call itself ready without one."""
+    out: list[Finding] = []
+    for t in plan.tasks:
+        if t.needs_professional and t.review is None and t.status == "ready":
+            out.append(Finding("error", t.id,
+                               "needs professional review with none recorded but is "
+                               "status='ready'"))
+        if t.review is not None and not t.needs_professional:
+            out.append(Finding("warning", t.id,
+                               "records a review it never asked for"))
+    return out
+
+
 def check_completeness(plan: Plan) -> list[Finding]:
     """Every kit owes the founder the same floor, regardless of profile."""
     out: list[Finding] = []
@@ -344,6 +406,8 @@ def validate(plan: Plan, mode: Mode = "strict") -> tuple[list[Finding], list[str
         *check_sources(plan, mode),
         *check_evidence(plan, mode),
         *check_presupposed_decisions(plan),
+        *check_calendar(plan),
+        *check_readiness(plan),
         *check_language(plan),
         *check_completeness(plan),
     ]

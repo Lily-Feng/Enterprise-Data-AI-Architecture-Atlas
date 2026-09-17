@@ -9,9 +9,11 @@ by `strict`. That is the gate working, not a bug to route around.
 import json
 import pathlib
 import sys
+from datetime import date
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[3]))
 
+from groundwork.calendar import resolve  # noqa: E402
 from groundwork.schemas import (  # noqa: E402
     Deadline, DecisionBrief, DecisionRecord, Election, FormNumber, FounderProfile,
     Jurisdiction, Money, Option, Plan, Quote, Source, Task, Tier,
@@ -125,6 +127,12 @@ profile = FounderProfile(
     sells="services", home_state="TX", owners=1, hiring_within_12mo=False,
     revenue_band_usd="50k_150k", funding_intent="bootstrap", already_earning=True,
     decided=(DecisionRecord(decision_id="D001", choice="LLC (state legal entity)"),),
+    formation_status="not_formed",
+    business_start_date=date(2026, 3, 1),
+    tax_year_end="12-31",
+    # Said plainly rather than defaulted. The formation date cannot be known
+    # before the filing is accepted, and anything keyed to it stays needs_info.
+    unknowns=("formation_date",),
 )
 
 tasks = [
@@ -204,7 +212,7 @@ tasks = [
             rule="Franchise tax reports are due each May 15. An entity at or below the "
                  "no tax due threshold files a Public Information Report or Ownership "
                  "Report rather than a tax report.",
-            hard=True, sources=[TX_NO_TAX_DUE]),
+            hard=True, resolver="tx_annual_report", sources=[TX_NO_TAX_DUE]),
         common_mistakes=[
             "Assuming no tax due means nothing is due. For report years 2024 and later "
             "the separate No Tax Due Report was discontinued, but an entity at or below "
@@ -222,7 +230,7 @@ tasks = [
         jurisdiction=US, agency="Private carrier",
         official_url=SBA_INSURANCE.url,
         depends_on=["T001"],
-        confidence=0.7, needs_professional=True,
+        confidence=0.7, needs_professional=True, status="awaiting_review",
         common_mistakes=["Assuming the entity itself is the insurance."],
         sources=[SBA_INSURANCE],
     ),
@@ -307,7 +315,8 @@ elections = [
         deadline=Deadline(
             rule="No more than two months and fifteen days after the beginning of the tax year the "
                  "election is to take effect, or at any time during the preceding tax year.",
-            hard=True, sources=[I2553]),
+            hard=True, resolver="form_2553_window", needs=("tax_year_end",),
+            sources=[I2553]),
         admin_cost_note="Adds payroll administration and a separate business return.",
         lost_if_missed="A late election generally takes effect the following tax year. The IRS "
                        "does document conditional relief for late elections, so a missed window is "
@@ -365,8 +374,28 @@ elections = [
 ]
 
 plan = Plan(profile=profile, tasks=tasks, decisions=decisions, elections=elections)
+
+# A deadline the rules can compute is computed here, so the kit ships dates
+# rather than nulls. Anything waiting on an unknown stays unresolved and says so.
+def _with_resolved(obj):
+    dl = obj.deadline
+    if dl is None or dl.resolved is not None:
+        return obj
+    computed = resolve(dl, profile)
+    if computed is None:
+        return obj
+    return obj.model_copy(update={"deadline": dl.model_copy(update={"resolved": computed})})
+
+
+plan = plan.model_copy(update={
+    "tasks": [_with_resolved(t) for t in plan.tasks],
+    "elections": [_with_resolved(e) for e in plan.elections],
+})
 out = pathlib.Path(__file__).parent / "plan.json"
 out.write_text(plan.model_dump_json(indent=2))
 print(f"wrote {out}")
 print(f"  {len(tasks)} tasks, {len(decisions)} briefs, {len(elections)} elections")
 print(f"  official fees ${plan.total_official_fees:,.2f} | avoided service cost ${plan.total_savings:,.2f}")
+dated = [(p, c.resolved) for p, c in plan.iter_claims() if getattr(c, "resolved", None)]
+print(f"  calendar: {len(dated)} resolved deadline(s) -> " +
+      ", ".join(f"{p} {d}" for p, d in dated))

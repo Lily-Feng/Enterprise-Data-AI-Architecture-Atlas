@@ -2,9 +2,15 @@
   "profile": {
     "sells": "services",
     "home_state": "TX",
+    "operating_states": [],
     "owners": 1,
     "hiring_within_12mo": false,
     "revenue_band_usd": "50k_150k",
+    "formation_status": "not_formed",
+    "formation_date": null,
+    "business_start_date": "2026-03-01",
+    "tax_year_end": "12-31",
+    "existing_elections": [],
     "touches_client_funds": false,
     "touches_regulated_data": false,
     "has_physical_premises": false,
@@ -17,6 +23,9 @@
         "choice": "LLC (state legal entity)",
         "decided_on": null
       }
+    ],
+    "unknowns": [
+      "formation_date"
     ]
   },
   "tasks": [
@@ -77,6 +86,8 @@
       ],
       "confidence": 1.0,
       "needs_professional": false,
+      "status": "ready",
+      "review": null,
       "sources": [
         {
           "url": "https://www.sos.state.tx.us/corp/forms_boc.shtml",
@@ -125,6 +136,8 @@
       ],
       "confidence": 1.0,
       "needs_professional": false,
+      "status": "ready",
+      "review": null,
       "sources": [
         {
           "url": "https://www.sba.gov/business-guide/launch-your-business/register-your-business",
@@ -194,6 +207,8 @@
       ],
       "confidence": 1.0,
       "needs_professional": false,
+      "status": "ready",
+      "review": null,
       "sources": [
         {
           "url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
@@ -245,6 +260,8 @@
       ],
       "confidence": 1.0,
       "needs_professional": false,
+      "status": "ready",
+      "review": null,
       "sources": [
         {
           "url": "https://www.sba.gov/business-guide/launch-your-business/register-your-business",
@@ -286,8 +303,10 @@
           }
         ],
         "rule": "Franchise tax reports are due each May 15. An entity at or below the no tax due threshold files a Public Information Report or Ownership Report rather than a tax report.",
-        "resolved": null,
-        "hard": true
+        "resolved": "2027-05-15",
+        "hard": true,
+        "needs": [],
+        "resolver": "tx_annual_report"
       },
       "have_ready": [],
       "common_mistakes": [
@@ -296,6 +315,8 @@
       ],
       "confidence": 0.8,
       "needs_professional": false,
+      "status": "ready",
+      "review": null,
       "sources": [
         {
           "url": "https://comptroller.texas.gov/taxes/franchise/",
@@ -332,6 +353,8 @@
       ],
       "confidence": 0.7,
       "needs_professional": true,
+      "status": "awaiting_review",
+      "review": null,
       "sources": [
         {
           "url": "https://www.sba.gov/business-guide/launch-your-business/get-business-insurance",
@@ -475,8 +498,12 @@
           }
         ],
         "rule": "No more than two months and fifteen days after the beginning of the tax year the election is to take effect, or at any time during the preceding tax year.",
-        "resolved": null,
-        "hard": true
+        "resolved": "2026-03-15",
+        "hard": true,
+        "needs": [
+          "tax_year_end"
+        ],
+        "resolver": "form_2553_window"
       },
       "admin_cost_note": "Adds payroll administration and a separate business return.",
       "lost_if_missed": "A late election generally takes effect the following tax year. The IRS does document conditional relief for late elections, so a missed window is not automatically a year lost, but relief is conditional and is not something to plan around.",
@@ -586,7 +613,9 @@
         ],
         "rule": "Deductible contributions for a tax year may be made up to the due date of the return, plus extensions, for that year. Establishment deadlines differ by plan type and must be confirmed per plan.",
         "resolved": null,
-        "hard": true
+        "hard": true,
+        "needs": [],
+        "resolver": null
       },
       "admin_cost_note": "Some plan types require an annual filing once assets pass a threshold.",
       "lost_if_missed": "A plan not established within its window cannot be applied retroactively to that tax year.",

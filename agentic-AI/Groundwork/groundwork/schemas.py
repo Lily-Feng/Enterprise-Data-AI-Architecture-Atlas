@@ -209,6 +209,15 @@ class Deadline(Cited):
     rule: str = Field(min_length=10)
     resolved: date | None = None
     hard: bool = True  # False for "recommended by", True for "you lose the option"
+    needs: tuple[str, ...] = ()  # profile fields required to turn the rule into a date
+    resolver: str | None = None  # a named rule in calendar.py that computes the date
+
+    @property
+    def computable(self) -> bool:
+        """A deadline with no unmet input is one the kit owes the founder as a
+        date. Every deadline in the first golden kit had resolved=None while the
+        kit promised a calendar."""
+        return not self.needs
 
     def claim(self) -> str:
         return self.rule
@@ -266,44 +275,108 @@ class FounderProfile(BaseModel):
 
     Produced by the discovery interview, which is a workflow: the questions are
     knowable in advance, so nothing here needs an agent.
+
+    The first version of this carried eight fields and could not support the
+    thing the kit promised. A calendar needs to know when the business started,
+    what its tax year is, and whether the entity exists yet; none of that was
+    asked, so every deadline in the golden kit resolved to null. An unknown is
+    now a value the profile can hold, rather than a gap the plan quietly fills.
     """
 
     model_config = ConfigDict(frozen=True)
 
+    # What the business is
     sells: Literal["services", "software", "physical_goods", "mixed"]
     home_state: Literal["TX", "CA", "DE"]
+    operating_states: tuple[Literal["TX", "CA", "DE"], ...] = ()
     owners: Annotated[int, Field(ge=1, le=10)]
     hiring_within_12mo: bool
     revenue_band_usd: Literal["pre_revenue", "under_50k", "50k_150k", "150k_400k", "over_400k"]
+
+    # Where it is in its life. Without these there is no calendar.
+    formation_status: Literal["not_formed", "filing_pending", "formed"] = "not_formed"
+    formation_date: date | None = None
+    business_start_date: date | None = None
+    tax_year_end: str = Field(default="12-31", pattern=r"^\d{2}-\d{2}$")
+    existing_elections: tuple[str, ...] = ()
+
+    # Risk surface
     touches_client_funds: bool = False
     touches_regulated_data: bool = False
     has_physical_premises: bool = False
-    regulated_industry: str | None = None  # health, finance, cannabis, alcohol, firearms
+    regulated_industry: str | None = None
     funding_intent: Literal["bootstrap", "raise_later", "raising_now"] = "bootstrap"
     already_earning: bool = False
+
     decided: tuple[DecisionRecord, ...] = ()
+    unknowns: tuple[str, ...] = ()  # fields the founder could not answer
 
     def has_decided(self, decision_id: str) -> bool:
         return any(d.decision_id == decision_id for d in self.decided)
 
+    def knows(self, field: str) -> bool:
+        """Whether a fact is available to compute with.
+
+        A field is unknown if the founder said so or if it is simply absent.
+        Both have to count, or an unanswered question silently becomes a
+        default the plan treats as fact.
+        """
+        if field in self.unknowns:
+            return False
+        return getattr(self, field, None) is not None
+
+    @property
+    def tax_year_start(self) -> date | None:
+        """First day of the current tax year, if the year end is known."""
+        if "tax_year_end" in self.unknowns:
+            return None
+        month, day = (int(x) for x in self.tax_year_end.split("-"))
+        today = date.today()
+        end_this_year = date(today.year, month, day)
+        start = end_this_year + timedelta(days=1)
+        return start.replace(year=start.year - 1) if today <= end_this_year else start
+
     @property
     def out_of_scope_reason(self) -> str | None:
         """v0.1 covers a solo or small services/software business. Anything
-        else must escalate to a professional rather than receive a kit."""
+        else is escalated rather than answered.
+
+        The first version checked four conditions and collected three more it
+        never used: `mixed` sales slipped through the physical-goods rule, and
+        the client-funds and regulated-data flags changed nothing at all.
+        """
         if self.regulated_industry:
             return f"{self.regulated_industry} is a regulated industry"
         if self.hiring_within_12mo:
             return "hiring brings payroll, withholding, and unemployment registration"
-        if self.sells == "physical_goods":
-            return "physical goods bring sales tax nexus and possibly permits"
+        if self.sells in ("physical_goods", "mixed"):
+            return "selling goods brings sales tax nexus and possibly permits"
+        if self.touches_client_funds:
+            return "holding client funds brings licensing and trust-account obligations"
+        if self.touches_regulated_data:
+            return "regulated client data brings sector-specific obligations"
         if self.funding_intent == "raising_now":
             return "raising now changes the entity decision materially"
+        if len(self.operating_states) > 1 or (
+            self.operating_states and self.home_state not in self.operating_states
+        ):
+            return "operating in more than one state raises foreign qualification"
         return None
 
 
 # --------------------------------------------------------------------------- #
 # What the kit contains
 # --------------------------------------------------------------------------- #
+
+
+class Review(BaseModel):
+    """Evidence that the professional review a task asked for actually occurred."""
+
+    model_config = ConfigDict(frozen=True)
+
+    reviewed_by: str = Field(min_length=2)
+    reviewed_on: date
+    note: str | None = None
 
 
 class Option(BaseModel):
@@ -362,16 +435,28 @@ class Task(BaseModel):
     common_mistakes: list[str] = Field(default_factory=list)
     confidence: Annotated[float, Field(ge=0.0, le=1.0)] = 1.0
     needs_professional: bool = False
+    status: Literal["ready", "needs_info", "awaiting_review"] = "ready"
+    review: Review | None = None
     sources: Annotated[list[Source], Field(min_length=1)]
 
     @model_validator(mode="after")
     def _low_confidence_escalates(self) -> Task:
-        """Fail closed. A task the agent is unsure about does not get handed to
-        a founder as though it were settled."""
+        """Fail closed, and stay closed until the escalation is answered.
+
+        Setting needs_professional used to be enough to pass. A task can now
+        only be `ready` once a Review records that the review happened; until
+        then it is awaiting_review, and a founder reading the kit can see the
+        difference.
+        """
         if self.confidence < 0.75 and not self.needs_professional:
             raise ValueError(
                 f"{self.id} has confidence {self.confidence:.2f} and must set "
                 "needs_professional=True rather than present as settled"
+            )
+        if self.needs_professional and self.review is None and self.status == "ready":
+            raise ValueError(
+                f"{self.id} needs professional review and has none recorded, so it "
+                "cannot be status='ready'; use 'awaiting_review'"
             )
         return self
 
