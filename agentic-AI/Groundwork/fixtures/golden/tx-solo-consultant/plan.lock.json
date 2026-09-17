@@ -1,0 +1,57 @@
+{
+  "https://comptroller.texas.gov/taxes/franchise/": {
+    "checked": "2026-09-16",
+    "fingerprint": "bdeb2dce643b23f7",
+    "status": 200
+  },
+  "https://direct.sos.state.tx.us/help/help-corp.asp?pg=fee": {
+    "checked": "2026-09-16",
+    "fingerprint": "9a93e4880b4e3eb3",
+    "status": 200
+  },
+  "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online": {
+    "checked": "2026-09-16",
+    "fingerprint": "a68f9554a2aa017e",
+    "status": 200
+  },
+  "https://www.irs.gov/forms-pubs/about-form-2553": {
+    "checked": "2026-09-16",
+    "fingerprint": "df8206077a76caec",
+    "status": 200
+  },
+  "https://www.irs.gov/forms-pubs/about-form-ss-4": {
+    "checked": "2026-09-16",
+    "fingerprint": "7b13f6599af7c229",
+    "status": 200
+  },
+  "https://www.irs.gov/forms-pubs/about-publication-535": {
+    "checked": "2026-09-16",
+    "fingerprint": "197783955c5ec612",
+    "status": 200
+  },
+  "https://www.irs.gov/forms-pubs/about-publication-560": {
+    "checked": "2026-09-16",
+    "fingerprint": "b64500097af19e57",
+    "status": 200
+  },
+  "https://www.irs.gov/forms-pubs/about-publication-587": {
+    "checked": "2026-09-16",
+    "fingerprint": "9965a2fe38cf263b",
+    "status": 200
+  },
+  "https://www.sba.gov/business-guide/launch-your-business/get-business-insurance": {
+    "checked": "2026-09-16",
+    "fingerprint": "cb6c60c085c1fd30",
+    "status": 200
+  },
+  "https://www.sba.gov/business-guide/launch-your-business/register-your-business": {
+    "checked": "2026-09-16",
+    "fingerprint": "cb6c60c085c1fd30",
+    "status": 200
+  },
+  "https://www.sos.state.tx.us/corp/forms_boc.shtml": {
+    "checked": "2026-09-16",
+    "fingerprint": "b5d413b165cd8ff3",
+    "status": 200
+  }
+}

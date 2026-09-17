@@ -43,3 +43,16 @@ A contained use case with clear current-state metrics, available data, an engage
 
 A newer Claude model has been released, and the team wants to switch to it. What's the best approach?
 Run the eval suite on the new model, check cost and latency, roll it out gradually, and keep the ability to roll back
+
+---
+
+responsible deployment:
+1. Set the boundary between trained behavior and your application layer. Trained behavior refuses broad harm classes but never saw this program's eligibility rules, so those belong to the application layer. Leave them in trained behavior and no control downstream can reach them.
+
+2. Place the runtime controls. Position input screening, output screening, and tool-call authorization, choose model-based or deterministic at each, and set the failure direction. Fail closed, because a screen that fails open lets an unscreened denial reach an applicant.
+
+3. Specify the fairness and transparency controls. Name which of the four injection points (corpus, prompt framing, examples, routing) could skew this outcome, and build the decision logging once, since the affected applicant, the regulator, the build team, and the control register all draw on it.
+
+4. Define the human-review routing. Route by confidence, reversibility, and cost of a wrong answer, and pick a placement: pre-action approval, post-action audit, or sampled review. Send a low-confidence, hard-to-reverse denial to pre-action approval. Key the rule to stakes, not volume, or a quiet queue waves a high-stakes denial through.
+
+5. Build the control register. Map each FedRAMP obligation to a control, an owner, and the evidence a reviewer accepts. A control with no evidence artifact is a claim you cannot prove operated.

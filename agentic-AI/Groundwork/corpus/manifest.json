@@ -1,0 +1,72 @@
+{
+  "_comment": "What to fetch, and how often. Committed to git; everything it produces is not. Add a source here, not in code.",
+  "defaults": { "refresh_days": 30 },
+  "sources": [
+    {
+      "id": "irs-form-2553",
+      "url": "https://www.irs.gov/forms-pubs/about-form-2553",
+      "title": "IRS - About Form 2553, Election by a Small Business Corporation",
+      "tier": 1, "jurisdiction": "US", "kind": "html"
+    },
+    {
+      "id": "irs-form-ss4",
+      "url": "https://www.irs.gov/forms-pubs/about-form-ss-4",
+      "title": "IRS - About Form SS-4", "tier": 1, "jurisdiction": "US", "kind": "html"
+    },
+    {
+      "id": "irs-ein-online",
+      "url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online",
+      "title": "IRS - Apply for an EIN Online", "tier": 1, "jurisdiction": "US", "kind": "html"
+    },
+    {
+      "id": "irs-pub-535",
+      "url": "https://www.irs.gov/forms-pubs/about-publication-535",
+      "title": "IRS - About Publication 535, Business Expenses",
+      "tier": 1, "jurisdiction": "US", "kind": "html"
+    },
+    {
+      "id": "irs-pub-587",
+      "url": "https://www.irs.gov/forms-pubs/about-publication-587",
+      "title": "IRS - About Publication 587, Business Use of Your Home",
+      "tier": 1, "jurisdiction": "US", "kind": "html"
+    },
+    {
+      "id": "irs-pub-560",
+      "url": "https://www.irs.gov/forms-pubs/about-publication-560",
+      "title": "IRS - About Publication 560, Retirement Plans for Small Business",
+      "tier": 1, "jurisdiction": "US", "kind": "html"
+    },
+    {
+      "id": "tx-sos-fees",
+      "url": "https://direct.sos.state.tx.us/help/help-corp.asp?pg=fee",
+      "title": "Texas SOSDirect - Filing Fee Schedule",
+      "tier": 1, "jurisdiction": "TX", "kind": "html",
+      "refresh_days": 14,
+      "note": "www.sos.state.tx.us/corp/feesbylaw.shtml carries the same schedule but returns 403 to any fetcher. This is the working path.",
+      "watch": ["Forms 201, 203, 205, 206"]
+    },
+    {
+      "id": "tx-sos-forms",
+      "url": "https://www.sos.state.tx.us/corp/forms_boc.shtml",
+      "title": "Texas SOS - Business Organizations Code Forms",
+      "tier": 1, "jurisdiction": "TX", "kind": "html",
+      "watch": ["Form 205"]
+    },
+    {
+      "id": "tx-comptroller-franchise",
+      "url": "https://comptroller.texas.gov/taxes/franchise/",
+      "title": "Texas Comptroller - Franchise Tax",
+      "tier": 1, "jurisdiction": "TX", "kind": "html", "refresh_days": 14
+    },
+    {
+      "id": "sba-register",
+      "url": "https://www.sba.gov/business-guide/launch-your-business/register-your-business",
+      "title": "SBA - Register your business", "tier": 2, "jurisdiction": "US", "kind": "html"
+    },
+    {
+      "id": "sba-insurance",
+      "url": "https://www.sba.gov/business-guide/launch-your-business/get-business-insurance",
+      "title": "SBA - Get business insurance", "tier": 2, "jurisdiction": "US", "kind": "html"
+    }
+  ]
+}
