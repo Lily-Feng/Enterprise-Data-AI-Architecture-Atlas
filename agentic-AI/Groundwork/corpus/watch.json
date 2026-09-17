@@ -1,4 +1,19 @@
 {
+  "irs-ein-online::never have to pay a fee for an EIN": {
+    "as_of": "2026-09-16",
+    "seen": "Beware of websites that charge for an EIN. You never have to pay a fee for an EIN.",
+    "url": "https://www.irs.gov/businesses/small-businesses-self-employed/apply-for-an-employer-identification-number-ein-online"
+  },
+  "irs-pub-535::We have discontinued Publication 535": {
+    "as_of": "2026-09-16",
+    "seen": "Note: We have discontinued Publication 535, Business Expenses; the last revision was for 2022. Below is a mapping to the major resources for each topic. For a full list, go to the Publication 535 for 2022 PDF . Also, note that Worksheet 6A that was in chapter 6 is now new 2023 Form 7206 , Self-Employed Health Insurance Deduction.",
+    "url": "https://www.irs.gov/forms-pubs/about-publication-535"
+  },
+  "tx-comptroller-franchise::Public Information Report or Ownership Report": {
+    "as_of": "2026-09-16",
+    "seen": "If you receive this notice, you failed to meet 2025 franchise tax filing requirements. To resolve this issue, you must file your 2025 franchise tax report and pay any tax, penalty and interest. If you are at or below the no tax due threshold for 2025, simply file your 2025 Public Information Report or Ownership Report. Learn how to resolve this issue and ensure your franchise tax account is curren",
+    "url": "https://comptroller.texas.gov/taxes/franchise/"
+  },
   "tx-sos-fees::Forms 201, 203, 205, 206": {
     "as_of": "2026-09-16",
     "seen": "Certificate of formation for a Texas entity (except nonprofit corporation, cooperative association, PA or LP) (Forms 201, 203, 205, 206) $300",

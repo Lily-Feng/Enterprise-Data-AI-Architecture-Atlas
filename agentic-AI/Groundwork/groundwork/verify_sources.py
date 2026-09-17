@@ -47,14 +47,46 @@ def fingerprint(body: bytes) -> str:
     return hashlib.sha256(body.strip().lower()).hexdigest()[:16]
 
 
-def fetch(url: str) -> tuple[str | None, ToolError | None]:
-    """Returns (fingerprint, error)."""
+def fetch(url: str) -> tuple[str | None, str | None, ToolError | None]:
+    """Returns (fingerprint, readable text, error)."""
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     try:
         with urllib.request.urlopen(req, timeout=TIMEOUT) as resp:
-            return fingerprint(resp.read()), None
+            body = resp.read()
+            return fingerprint(body), readable(body), None
     except Exception as e:  # noqa: BLE001
-        return None, classify(e)
+        return None, None, classify(e)
+
+
+TAG = re.compile(rb"<[^>]+>")
+DROP_EL = (re.compile(rb"<script\b[^>]*>.*?</script>", re.S | re.I),
+           re.compile(rb"<style\b[^>]*>.*?</style>", re.S | re.I))
+
+
+def readable(body: bytes) -> str:
+    for pattern in DROP_EL:
+        body = pattern.sub(b" ", body)
+    import html as _html
+    text = TAG.sub(b" ", body).decode("utf-8", "replace")
+    return re.sub(r"\s+", " ", _html.unescape(text)).strip().lower()
+
+
+def quotes_for(plan: dict) -> dict[str, list[str]]:
+    """Every quoted claim, by URL. These are what a refresh has to re-confirm."""
+    out: dict[str, list[str]] = {}
+
+    def walk(node: object) -> None:
+        if isinstance(node, dict):
+            if node.get("url") and node.get("quote"):
+                out.setdefault(node["url"], []).append(node["quote"])
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(plan)
+    return out
 
 
 def collect_urls(plan: dict) -> list[str]:
@@ -72,6 +104,31 @@ def collect_urls(plan: dict) -> list[str]:
 
     walk(plan)
     return sorted(set(found))
+
+
+def unstamp(plan: dict, urls: set[str]) -> int:
+    """Withdraw verification from sources whose evidence no longer holds.
+
+    Detecting a change and carrying on is how a kit keeps quoting a fee that
+    moved. Clearing retrieved_at puts the claim back in front of the gate,
+    which will refuse to ship it until the evidence is re-established.
+    """
+    count = 0
+
+    def walk(node: object) -> None:
+        nonlocal count
+        if isinstance(node, dict):
+            if node.get("url") in urls and "tier" in node:
+                node["retrieved_at"] = None
+                count += 1
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(plan)
+    return count
 
 
 def stamp(plan: dict, verified: dict[str, str]) -> int:
@@ -109,10 +166,23 @@ def main(argv: list[str]) -> int:
     changed: list[str] = []
     failed: list[str] = []
 
+    quoted = quotes_for(plan)
+    broken: list[str] = []
+
     print(f"verifying {len(urls)} cited sources\n")
     for url in urls:
-        fp, err = fetch(url)
+        fp, text, err = fetch(url)
         if fp is not None:
+            # A fingerprint proves the page was reachable. Only the quote proves
+            # the claim still has something holding it up.
+            gone = [q for q in quoted.get(url, [])
+                    if re.sub(r"\s+", " ", q).strip().lower() not in (text or "")]
+            if gone:
+                broken.append(url)
+                print(f"  EVIDENCE GONE  {url}")
+                for q in gone:
+                    print(f"                 {q[:110]}")
+                continue
             previous = lock.get(url, {}).get("fingerprint")
             if previous and previous != fp:
                 changed.append(url)
@@ -135,6 +205,15 @@ def main(argv: list[str]) -> int:
             print(f"    - {url}")
         print()
 
+    if broken:
+        print(f"  {len(broken)} source(s) no longer carry the text their claims quote.")
+        print("  Verification is being withdrawn from them, so the gate will refuse")
+        print("  to ship those claims until the evidence is re-established.\n")
+
+    if write and broken:
+        n = unstamp(plan, set(broken))
+        print(f"  withdrew verification from {n} source reference(s)")
+
     if write and verified:
         n = stamp(plan, verified)
         path.write_text(json.dumps(plan, indent=2))
@@ -144,8 +223,9 @@ def main(argv: list[str]) -> int:
     elif verified:
         print("  dry run. Pass --write to stamp retrieved_at and update the lock file.")
 
-    print(f"\n  {len(verified)} verified, {len(failed)} failed, {len(changed)} changed")
-    return 1 if failed else 0
+    print(f"\n  {len(verified)} verified, {len(failed)} failed, {len(changed)} changed, "
+          f"{len(broken)} evidence gone")
+    return 1 if (failed or broken) else 0
 
 
 if __name__ == "__main__":

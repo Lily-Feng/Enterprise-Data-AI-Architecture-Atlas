@@ -84,13 +84,18 @@ def digest(text: str, n: int = 12) -> str:
     return hashlib.sha1(text.lower().encode("utf-8")).hexdigest()[:n]
 
 
-def chunk_key(url: str, text: str) -> str:
+def chunk_key(url: str, text: str, occurrence: int = 0) -> str:
     """Identity that survives the chunk's own edit.
 
     Anchored on the opening of the text, which for a fee schedule or a form
     listing is the label rather than the value.
+
+    Distinct rows can share an opening -- two Texas amendment fees differ only
+    after sixty characters -- so the occurrence index disambiguates them. Both
+    are kept. Dropping one made a real fee unretrievable and did it silently.
     """
-    return digest(url + "|" + text[:KEY_PREFIX].lower(), 12)
+    base = digest(url + "|" + text[:KEY_PREFIX].lower(), 12)
+    return base if occurrence == 0 else f"{base}#{occurrence}"
 
 
 def to_chunks(body: bytes, source: dict) -> list[dict]:
@@ -104,6 +109,7 @@ def to_chunks(body: bytes, source: dict) -> list[dict]:
         body = pattern.sub(b" ", body)
     blocks = BLOCK_END.split(body)
     out: list[dict] = []
+    prefix_seen: dict[str, int] = {}
     for raw_block in blocks:
         text = normalize(raw_block.decode("utf-8", "replace"))
         if len(text) < MIN_CHUNK:
@@ -115,9 +121,13 @@ def to_chunks(body: bytes, source: dict) -> list[dict]:
                 continue
             if BOILERPLATE.search(piece):
                 continue
+            stem = digest(source["url"] + "|" + piece[:KEY_PREFIX].lower(), 12)
+            occurrence = prefix_seen.get(stem, 0)
+            prefix_seen[stem] = occurrence + 1
             out.append({
-                "key": chunk_key(source["url"], piece),
+                "key": chunk_key(source["url"], piece, occurrence),
                 "hash": digest(piece),
+                "effective_date": source.get("effective_date"),
                 "text": piece,
                 "source_id": source["id"],
                 "url": source["url"],
@@ -125,9 +135,10 @@ def to_chunks(body: bytes, source: dict) -> list[dict]:
                 "tier": source["tier"],
                 "jurisdiction": source["jurisdiction"],
             })
-    # A page can repeat a line in nav and body; keep the first occurrence only.
+    # An identical line repeated verbatim (nav plus body) is still noise, but
+    # two different lines are not: dedupe on the full text, never on the key.
     seen: set[str] = set()
-    return [c for c in out if not (c["key"] in seen or seen.add(c["key"]))]
+    return [c for c in out if not (c["hash"] in seen or seen.add(c["hash"]))]
 
 
 def fetch(url: str, attempts: int = 3) -> tuple[bytes | None, ToolError | None]:
@@ -223,8 +234,14 @@ def _refresh(run: Run, force: bool, only: str | None) -> int:
                 print(f"           note: {note}")
             cached = RAW / f"{s['id']}.html"
             if cached.exists():
-                all_chunks.extend(to_chunks(cached.read_bytes(), s))
-                print("           using last good copy from corpus/raw/")
+                fallback = to_chunks(cached.read_bytes(), s)
+                for ch in fallback:
+                    ch["stale"] = True
+                    ch["stale_reason"] = f"served from cache after {err}"
+                all_chunks.extend(fallback)
+                run.event("served_stale", source_id=s["id"], reason=str(err),
+                          chunks=len(fallback))
+                print(f"           serving {len(fallback)} STALE chunk(s) from cache")
             continue
 
         (RAW / f"{s['id']}.html").write_bytes(body)
@@ -314,7 +331,8 @@ def load_chunks() -> list[dict]:
     return [json.loads(line) for line in CHUNKS.read_text().splitlines() if line.strip()]
 
 
-def search(query: str, jurisdiction: str | None = None, limit: int = 5) -> list[dict]:
+def search(query: str, jurisdiction: str | None = None, limit: int = 5,
+           as_of: str | None = None, allow_stale: bool = True) -> list[dict]:
     """Keyword scoring over the live corpus.
 
     Deliberately BM25-shaped rather than semantic: the highest-value queries in
@@ -328,6 +346,13 @@ def search(query: str, jurisdiction: str | None = None, limit: int = 5) -> list[
     if jurisdiction:
         allowed = {"US", jurisdiction}
         chunks = [c for c in chunks if c["jurisdiction"] in allowed]
+    if as_of:
+        # Guidance that takes effect after the date being asked about must not
+        # answer a question about that date.
+        chunks = [c for c in chunks
+                  if not c.get("effective_date") or c["effective_date"] <= as_of]
+    if not allow_stale:
+        chunks = [c for c in chunks if not c.get("stale")]
     terms = [t for t in re.findall(r"[a-z0-9§$.,-]+", query.lower()) if len(t) > 1]
     scored = []
     for c in chunks:
@@ -406,11 +431,14 @@ def main(argv: list[str]) -> int:
             print("usage: search <query> [--jurisdiction TX]")
             return 2
         j = argv[argv.index("--jurisdiction") + 1] if "--jurisdiction" in argv else None
-        hits = search(argv[2], j)
+        as_of = argv[argv.index("--as-of") + 1] if "--as-of" in argv else None
+        hits = search(argv[2], j, as_of=as_of, allow_stale="--no-stale" not in argv)
         if not hits:
             print("  no matches")
         for h in hits:
-            print(f"\n  [{h['score']}] {h['source_id']} (tier {h['tier']}, {h['jurisdiction']})")
+            mark = " STALE" if h.get("stale") else ""
+            print(f"\n  [{h['score']}] {h['source_id']} (tier {h['tier']}, "
+                  f"{h['jurisdiction']}){mark}")
             print(f"  {h['text'][:300]}")
         return 0
     if cmd == "impact":
