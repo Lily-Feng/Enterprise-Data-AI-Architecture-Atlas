@@ -73,6 +73,7 @@
       ],
       "depends_on": [],
       "requires_decision": "D001",
+      "role": "entity_formation",
       "deadline": null,
       "have_ready": [
         "Entity name plus two alternates",
@@ -125,6 +126,7 @@
         "T001"
       ],
       "requires_decision": null,
+      "role": "governing_document",
       "deadline": null,
       "have_ready": [
         "Ownership percentages",
@@ -195,6 +197,7 @@
         "T001"
       ],
       "requires_decision": null,
+      "role": "ein",
       "deadline": null,
       "have_ready": [
         "Exact legal entity name as filed",
@@ -248,6 +251,7 @@
         "T003"
       ],
       "requires_decision": null,
+      "role": "bank_account",
       "deadline": null,
       "have_ready": [
         "Filed Certificate of Formation",
@@ -291,6 +295,7 @@
         "T001"
       ],
       "requires_decision": null,
+      "role": "state_tax_registration",
       "deadline": {
         "sources": [
           {
@@ -346,6 +351,7 @@
         "T001"
       ],
       "requires_decision": null,
+      "role": "insurance",
       "deadline": null,
       "have_ready": [],
       "common_mistakes": [

@@ -430,6 +430,8 @@ class Task(BaseModel):
     processing_time_days: tuple[int, int] | None = None
     depends_on: list[str] = Field(default_factory=list)
     requires_decision: str | None = Field(default=None, pattern=r"^D\d{3}$")
+    role: Literal["entity_formation", "governing_document", "ein", "bank_account",
+                  "state_tax_registration", "insurance", "other"] = "other"
     deadline: Deadline | None = None
     have_ready: list[str] = Field(default_factory=list)
     common_mistakes: list[str] = Field(default_factory=list)

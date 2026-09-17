@@ -380,13 +380,56 @@ def check_readiness(plan: Plan) -> list[Finding]:
     return out
 
 
+# The floor every kit owes a founder, as roles rather than as words. The old
+# version searched the concatenated titles for "ein" and "bank", so a single
+# task called "EIN and bank" satisfied both and a kit of one task passed.
+REQUIRED_ROLES: dict[str, str] = {
+    "entity_formation": "a formation filing",
+    "ein": "an EIN application",
+    "bank_account": "a business bank account",
+    "state_tax_registration": "a state tax registration",
+}
+
+# Order a founder cannot get right by guessing, and that fails at the counter
+# when they get it wrong.
+REQUIRED_ORDER: tuple[tuple[str, str], ...] = (
+    ("ein", "entity_formation"),
+    ("bank_account", "ein"),
+    ("bank_account", "entity_formation"),
+    ("state_tax_registration", "entity_formation"),
+)
+
+
 def check_completeness(plan: Plan) -> list[Finding]:
     """Every kit owes the founder the same floor, regardless of profile."""
     out: list[Finding] = []
-    titles = " ".join(t.title.lower() for t in plan.tasks)
-    for needle, label in (("ein", "an EIN task"), ("bank", "a business bank account task")):
-        if needle not in titles:
-            out.append(Finding("error", "plan.tasks", f"kit is missing {label}"))
+    by_role: dict[str, list[str]] = {}
+    for t in plan.tasks:
+        by_role.setdefault(t.role, []).append(t.id)
+
+    for role, label in REQUIRED_ROLES.items():
+        if role not in by_role:
+            out.append(Finding("error", "plan.tasks", f"kit is missing {label} (role={role})"))
+        elif len(by_role[role]) > 1:
+            out.append(Finding("warning", "plan.tasks",
+                               f"{len(by_role[role])} tasks claim role={role}: {by_role[role]}"))
+
+    # Ordering is the part of the kit a founder cannot supply themselves.
+    ids = {t.id: t for t in plan.tasks}
+    for later, earlier in REQUIRED_ORDER:
+        for lid in by_role.get(later, []):
+            reached, frontier = set(), list(ids[lid].depends_on)
+            while frontier:
+                nxt = frontier.pop()
+                if nxt in reached or nxt not in ids:
+                    continue
+                reached.add(nxt)
+                frontier.extend(ids[nxt].depends_on)
+            if not any(ids[r].role == earlier for r in reached):
+                out.append(Finding("error", lid,
+                                   f"role={later} must depend on role={earlier}, directly "
+                                   "or through the chain"))
+
     if not plan.elections:
         out.append(
             Finding("error", "plan.elections", "no elections listed; the tax inventory is the point")

@@ -43,7 +43,7 @@ answers it. The same applies to cost and to tax:
 | [`groundwork/errors.py`](groundwork/errors.py) | Structured tool failures — `category`, `retryable`, `retry_after_ms`. A 403 is permanent; a 503 is not. |
 | [`groundwork/repair.py`](groundwork/repair.py) | Gate findings → a scoped repair turn. Only failing objects are regenerated; the loop is bounded and escalates. |
 | [`groundwork/audit.py`](groundwork/audit.py) | Append-only run record. Every gate result, repair round, escalation and corpus change, stamped with the corpus state it saw. |
-| [`evals/`](evals/) | 35 cases across the gate, the repair loop, and the audit trail. |
+| [`evals/`](evals/) | 100 cases across the gate, the repair loop, the audit trail, retrieval, and whole-profile scenarios. [SPEC.md](SPEC.md) lists what they still do not measure. |
 | Interview, plan generator, kit compiler | Not yet — see [SPEC.md](SPEC.md). |
 
 ## The corpus refreshes
@@ -100,6 +100,8 @@ python3 -m groundwork.audit sources <plan.json> [-o SOURCES.md]
 python3 -m evals.test_gate                               # 9 -- what the gate must refuse
 python3 -m evals.test_repair                             # 12 -- scoping and termination
 python3 -m evals.test_audit                              # 14 -- the record survives
+python3 -m evals.test_corpus                             #  8 -- chunk identity, filters
+python3 -m evals.test_scenarios                          # 29 -- whole profiles end to end
 ```
 
 `errors.py` and `repair.py` are library-only. They are called by the loop that

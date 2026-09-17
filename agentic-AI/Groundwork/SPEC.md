@@ -138,7 +138,23 @@ Mostly code-gradable, which is the point.
 | Staleness detection | Injected stale chunk is flagged |
 | p95 latency, cost per kit | Measured per run |
 
-`evals/test_gate.py` covers the gate. Scenario evals arrive with Phase 2.
+`evals/` covers the gate, the repair loop, the audit trail, retrieval, and
+whole-profile scenarios: routing, the required-role floor, dependency ordering,
+and deadline arithmetic against known inputs.
+
+**What it still does not measure.** Named here rather than implied by a green
+suite:
+
+- **Factual accuracy.** Nothing checks that a correctly quoted page is being
+  applied to the right situation. Two errors of exactly that kind were found by
+  human review, not by the suite. See the fixture's `REVIEW.md`.
+- **Adversarial source content.** No filing-mill page or injected instruction
+  text is in the corpus, so nothing proves it would be resisted.
+- **Kit execution.** There is no kit compiler yet, so "does the generated kit
+  run" is unmeasured.
+- **Scenario breadth.** One authored kit, for one state. CA and DE have neither
+  corpus nor fixture, so cross-jurisdiction behaviour is asserted only
+  negatively, by confirming other states do not leak into a Texas answer.
 
 ## 7. Agentic engineering checklist
 

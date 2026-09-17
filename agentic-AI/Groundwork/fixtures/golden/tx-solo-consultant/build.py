@@ -137,7 +137,7 @@ profile = FounderProfile(
 
 tasks = [
     Task(
-        id="T001",
+        id="T001", role="entity_formation",
         title="File the Certificate of Formation with the Texas Secretary of State",
         why="The LLC does not exist until the state accepts this filing, and every "
             "later step depends on it existing.",
@@ -156,7 +156,7 @@ tasks = [
         sources=[SOS_FORMS, SOS_FEES],
     ),
     Task(
-        id="T002",
+        id="T002", role="governing_document",
         title="Adopt a written operating agreement",
         why="Texas does not file it, but banks ask for it and it is what separates "
             "the entity from its owner if that separation is ever tested.",
@@ -168,7 +168,7 @@ tasks = [
         sources=[SBA_REGISTER],
     ),
     Task(
-        id="T003",
+        id="T003", role="ein",
         title="Apply for an EIN from the IRS",
         why="The EIN is the business's tax identity and is required to open a "
             "business bank account without using a Social Security number.",
@@ -187,7 +187,7 @@ tasks = [
         sources=[EIN, SS4],
     ),
     Task(
-        id="T004",
+        id="T004", role="bank_account",
         title="Open a business bank account",
         why="Commingling personal and business funds is the most common way the "
             "liability separation an LLC provides gets argued away.",
@@ -199,7 +199,7 @@ tasks = [
         sources=[SBA_REGISTER],
     ),
     Task(
-        id="T005",
+        id="T005", role="state_tax_registration",
         title="Set up a Texas franchise tax account and file the annual report",
         why="A Texas LLC has an annual filing with the Comptroller even when it owes "
             "no tax. Which filing depends on where the entity sits relative to the no "
@@ -223,7 +223,7 @@ tasks = [
         sources=[TX_FRANCHISE],
     ),
     Task(
-        id="T006",
+        id="T006", role="insurance",
         title="Obtain professional liability and general liability insurance",
         why="An LLC limits owner liability for business debts; it does not cover "
             "a claim arising from the work itself.",
