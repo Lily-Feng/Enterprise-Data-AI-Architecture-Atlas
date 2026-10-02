@@ -7,17 +7,23 @@ Training reduces broad harm for every request but never saw your partner's domai
 A guarded path has three control points and a chosen failure direction
 Input screening, output screening, and tool-call authorization answer different questions, so only one filter at the end does not cover the other two. Let control errors fail closed for decisions where a wrong pass causes harm, because a guardrail that silently passes traffic gives you the appearance of protection without any of the function.
 
-03
-Fairness and transparency are instrumented, not assumed
-Unequal outcomes arise at points you control, such as the corpus, prompt framing, examples, and routing, so treating fairness as the vendor's responsibility leaves those points unmonitored. Log every decision so users, regulators, and your team can reconstruct it. If you cannot reconstruct an explanation, you cannot reliably provide one.
+### 03 · Fairness and transparency are instrumented, not assumed
 
-04
-Route review by stakes, not by volume
-Confidence, reversibility, and the cost of a wrong answer set which decisions a person should review, so send the high-stakes, low-confidence ones to a human with the inputs and the flag reason and let the rest through. Routing everything floods the queue until reviewers click through without reading.
+**The rule:** unequal outcomes arise at points *you* control — **the corpus, prompt framing, examples, and routing** — so treating fairness as the vendor's responsibility leaves exactly those points unmonitored. Log every decision so users, regulators, and your own team can reconstruct it.
 
-05
-A compliant entry point is a prerequisite, and an evidenced control set is the proof
-A regulation states an outcome and leaves you the control, so turn each obligation into a specific control, a named owner, and a living evidence artifact you revalidate over time. A control with no owner and no evidence eventually goes non-operational and fails at the audit, because what a reviewer accepts is proof the control is live, not the control itself.
+> **The failure:** if you cannot reconstruct an explanation, you cannot reliably provide one.
+
+### 04 · Route review by stakes, not by volume
+
+**The rule:** **confidence, reversibility, and the cost of a wrong answer** decide which decisions a person should review. Send the high-stakes, low-confidence ones to a human — with the inputs and the flag reason attached — and let the rest through.
+
+> **The failure:** routing everything floods the queue until reviewers click through without reading.
+
+### 05 · A compliant entry point is a prerequisite; an evidenced control set is the proof
+
+**The rule:** a regulation states an *outcome* and leaves you the control. Turn each obligation into **a specific control, a named owner, and a living evidence artifact** you revalidate over time.
+
+> **The failure:** a control with no owner and no evidence eventually goes non-operational and fails at the audit — what a reviewer accepts is proof the control is *live*, not the control itself.
 
 What comes next
 The next module shifts from building a responsible deployment to handing it off and stewarding it. You will take the architecture you can now evidence and communicate its tradeoffs to non-technical stakeholders, document it to a standard, and steward it through the discovery-to-hand-off lifecycle. The control register and the layered boundary you built here become the documentation and the baseline that handoff rests on.

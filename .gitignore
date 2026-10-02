@@ -2,3 +2,5 @@
 roadmap.md
 
 .databricks
+.DS_Store
+.gitignore

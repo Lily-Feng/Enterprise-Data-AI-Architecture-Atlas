@@ -36,6 +36,10 @@ Log analysis at a volume that is genuinely adversarial. Cost per record, not mod
 
 - [Cost-tiered log analysis](AI-Ops/cost-tiered-log-analysis.md)
 
+## Databricks certification study
+
+The Databricks certification materials previously kept in `_databricks/` now live in [databricks-certificate](https://github.com/Lily-Feng/databricks-certificate), a separate study room for Data Engineer Professional and Machine Learning Professional. Original notes, exam guides, and the Retail Reliability Lakehouse lab plan are preserved in its [collected materials](https://github.com/Lily-Feng/databricks-certificate/tree/main/content/collected).
+
 ## Reference
 
 - [Glossary](glossary.md) — terms as they're used when you're wiring something

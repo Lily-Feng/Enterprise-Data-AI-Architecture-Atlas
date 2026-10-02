@@ -8,6 +8,15 @@
 
 ---
 
+## What you will be able to do
+
+1. **Put evals before code.** Define success criteria and build an eval suite before writing the first line of production code — distinguishing **model-based from code-based evals**, selecting the eval workflow stages, and using evals as the **gating mechanism for any change** to a production system.
+2. **Take a POC to production.** Work the POC-to-production checklist: map **cost and latency to a budget**, specify the reliability patterns (**retries, fallbacks, circuit breakers**), and name each failure mode of the chosen architecture with its mitigation — including what makes *agents* (systems that use tools, reason across turns, and take multi-step actions) production-reliable.
+3. **Scope a use case.** Estimate **call volume, token consumption, and cost**; assess technical feasibility against the four AI properties from *AI Capabilities and Limitations*; and translate a business problem into a scoped solution architecture with **explicit boundary conditions**.
+4. **Architect for the enterprise.** Specify the integration patterns for **compliance** (regulated-industry constraints, BAA coverage, data residency), **identity** (SSO/OAuth), **authorization**, **data handling**, and **observability instrumentation** — placing the right mechanism (API, SDK, MCP, Claude Code) at each integration point.
+
+---
+
 ## 1. Evals before code — and why the order matters
 
 This is the organizing idea of the whole course. Evaluations are not a testing phase after the build; they are **acceptance criteria written first**.
